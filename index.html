@@ -7,13 +7,17 @@
 <title>VYRALX — GO VIRAL. GET PAID.</title>
 <meta name="description" content="VYRALX — the free social video app. Go live, post, upload, go viral. GO VIRAL. GET PAID.">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/vyralx.css">
 </head>
 <body>
 
 <div id="splash">
-  <div class="bigx">X</div>
-  <div class="vx-logo" style="font-size:34px;"><span class="v">V</span>YRAL<span class="x">X</span></div>
+  <img class="vx-banner-img hidden" alt="VYRALX">
+  <div class="vx-banner-fallback">
+    <div class="bigx">X</div>
+    <div class="vx-logo" style="font-size:34px;"><span class="v">V</span>YRAL<span class="x">X</span></div>
+  </div>
   <div class="vx-slogan">Go Viral. Get Paid.</div>
 </div>
 
@@ -47,6 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
+<script src="js/banner-data.js"></script>
 <script src="js/app.js"></script>
 <script>VX_renderFeed("foryou");</script>
 </body>

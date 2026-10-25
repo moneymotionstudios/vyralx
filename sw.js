@@ -1,8 +1,8 @@
 // VYRALX service worker — network-first, offline fallback to cache.
-const CACHE = "vyralx-v1";
+const CACHE = "vyralx-v2";
 const SHELL = [
   "./", "./index.html", "./discover.html", "./create.html", "./live.html", "./profile.html", "./auth.html",
-  "./css/vyralx.css", "./js/config.js", "./js/app.js", "./js/auth.js",
+  "./css/vyralx.css", "./js/config.js", "./js/app.js", "./js/auth.js", "./js/banner-data.js",
   "./manifest.webmanifest", "./icon.svg"
 ];
 self.addEventListener("install", (e) => {

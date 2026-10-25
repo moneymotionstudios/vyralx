@@ -6,11 +6,13 @@
 <meta name="theme-color" content="#090B0A">
 <title>Sign in — VYRALX</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/vyralx.css">
 </head>
 <body>
 <main class="page narrow">
-  <div class="center">
+  <img class="vx-banner-img auth-banner hidden" alt="VYRALX">
+  <div class="center vx-banner-fallback">
     <div class="vx-logo" style="font-size:40px;"><span class="v">V</span>YRAL<span class="x">X</span></div>
     <div class="vx-slogan">Go Viral. Get Paid.</div>
   </div>
@@ -49,6 +51,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
+<script src="js/banner-data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 </body>

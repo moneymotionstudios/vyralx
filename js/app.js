@@ -16,6 +16,18 @@
     }, 1100);
   });
 
+  // ---- title banner (uploaded logo art) ----
+  document.addEventListener("DOMContentLoaded", function () {
+    if (!window.VX_BANNER) return;
+    document.querySelectorAll(".vx-banner-img").forEach(function (img) {
+      img.src = window.VX_BANNER;
+      img.classList.remove("hidden");
+    });
+    document.querySelectorAll(".vx-banner-fallback").forEach(function (el) {
+      el.classList.add("hidden");
+    });
+  });
+
   // ---- demo seed (prototype content until real uploads land) ----
   var SEED = [
     {
