@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<title>Profile — VYRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/vyralx.css">
+</head>
+<body>
+<main class="page">
+  <div class="profile-head">
+    <div class="avatar" id="p-avatar">?</div>
+    <div>
+      <div class="vx-logo" style="font-size:21px;" id="p-name">Guest</div>
+      <div class="muted" id="p-username">@guest</div>
+    </div>
+  </div>
+  <p id="p-bio" class="muted">Sign in to build your profile, post videos, and go live.</p>
+  <div class="stat-row">
+    <div class="stat"><b id="p-following">0</b><span>Following</span></div>
+    <div class="stat"><b id="p-followers">0</b><span>Followers</span></div>
+    <div class="stat"><b id="p-likes">0</b><span>Likes</span></div>
+  </div>
+  <div id="signed-out">
+    <a class="btn btn-green btn-block" href="auth.html">Sign in / Create account</a>
+  </div>
+  <div id="signed-in" class="hidden">
+    <button class="btn btn-block" id="sign-out" type="button">Sign out</button>
+  </div>
+
+  <h2 style="margin:22px 0 4px;">Your videos</h2>
+  <div class="grid" id="p-grid">
+    <div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  </div>
+  <p class="muted center" id="p-empty">Nothing posted yet — your uploads land here.</p>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create"><span class="ic">+</span>Create</a>
+  <a href="live.html"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html" class="active"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script>
+(async function () {
+  var sb = window.VX && window.VX.sb;
+  if (!sb) return;
+  var u = (await sb.auth.getUser()).data.user;
+  if (!u) return;
+  document.getElementById("signed-out").classList.add("hidden");
+  document.getElementById("signed-in").classList.remove("hidden");
+  var pr = await sb.from("profiles").select("*").eq("id", u.id).maybeSingle();
+  if (pr.data) {
+    document.getElementById("p-name").textContent = pr.data.display_name || pr.data.username;
+    document.getElementById("p-username").textContent = "@" + pr.data.username + (pr.data.verified ? " ✔" : "");
+    document.getElementById("p-bio").textContent = pr.data.bio || "";
+    document.getElementById("p-avatar").textContent = (pr.data.username || "?").charAt(0).toUpperCase();
+  }
+  var fol = await sb.from("follows").select("id", { count: "exact", head: true }).eq("following_id", u.id);
+  var fing = await sb.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", u.id);
+  document.getElementById("p-followers").textContent = fol.count || 0;
+  document.getElementById("p-following").textContent = fing.count || 0;
+  var vids = await sb.from("videos").select("id,video_url,poster_url,like_count").eq("user_id", u.id).eq("status", "active").order("created_at", { ascending: false }).limit(12);
+  if (vids.data && vids.data.length) {
+    document.getElementById("p-empty").classList.add("hidden");
+    var grid = document.getElementById("p-grid");
+    grid.innerHTML = "";
+    vids.data.forEach(function (v) {
+      var c = document.createElement("div"); c.className = "cell";
+      c.innerHTML = '<video src="' + v.video_url + '" preload="metadata" muted playsinline></video>';
+      grid.appendChild(c);
+    });
+    var likes = vids.data.reduce(function (a, v) { return a + (v.like_count || 0); }, 0);
+    document.getElementById("p-likes").textContent = likes;
+  }
+  document.getElementById("sign-out").addEventListener("click", async function () {
+    await sb.auth.signOut();
+    location.reload();
+  });
+})();
+</script>
+</body>
+</html>

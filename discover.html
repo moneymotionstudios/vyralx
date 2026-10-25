@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<title>Discover — VYRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/vyralx.css">
+</head>
+<body>
+<main class="page">
+  <h1 class="chrome">DISCOVER</h1>
+  <form id="search-form">
+    <input id="q" type="search" placeholder="Search videos, #hashtags, @creators">
+    <button class="btn btn-green btn-block" type="submit" style="margin-top:10px;">Search</button>
+  </form>
+  <p class="form-error" id="s-error"></p>
+  <div id="results"></div>
+  <div class="card">
+    <h3 style="margin-top:0;">Trending tags</h3>
+    <p><a href="index.html">#vyralx</a> · <a href="index.html">#brooklyn</a> · <a href="index.html">#moneymotion</a> · <a href="index.html">#studio</a></p>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html" class="active"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create"><span class="ic">+</span>Create</a>
+  <a href="live.html"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script>
+document.getElementById("search-form").addEventListener("submit", async function (e) {
+  e.preventDefault();
+  var q = document.getElementById("q").value.trim();
+  var out = document.getElementById("results");
+  var err = document.getElementById("s-error");
+  err.textContent = ""; out.innerHTML = "";
+  if (!q) return;
+  var sb = window.VX && window.VX.sb;
+  if (!sb) { err.textContent = "Search goes live with the backend — try the feed tabs meanwhile."; return; }
+  var res = await sb.from("videos")
+    .select("id,caption,video_url,like_count,profiles(username)")
+    .eq("status", "active")
+    .or("caption.ilike.%" + q.replace(/[%_]/g, "") + "%,hashtags.cs.{" + (q.startsWith("#") ? q : "#" + q) + "}")
+    .order("created_at", { ascending: false }).limit(20);
+  if (res.error) { err.textContent = res.error.message; return; }
+  if (!res.data.length) { out.innerHTML = '<p class="muted center">No matches yet.</p>'; return; }
+  res.data.forEach(function (v) {
+    var d = document.createElement("div");
+    d.className = "card";
+    d.innerHTML = "<b>@" + (v.profiles ? v.profiles.username : "creator") + "</b>" +
+      '<video src="' + v.video_url + '" preload="metadata" muted playsinline controls style="width:100%;border-radius:10px;margin-top:8px;"></video>' +
+      '<p class="muted">' + (v.caption || "") + " · ▲ " + (v.like_count || 0) + "</p>";
+    out.appendChild(d);
+  });
+});
+</script>
+</body>
+</html>

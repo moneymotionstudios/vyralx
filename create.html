@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<title>Create — VYRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/vyralx.css">
+</head>
+<body>
+<main class="page narrow">
+  <h1 class="chrome">CREATE</h1>
+  <p class="muted">Upload a vertical video and put it on the feed.</p>
+  <div class="card">
+    <label for="file">Video file</label>
+    <input id="file" type="file" accept="video/*">
+    <label for="caption">Caption</label>
+    <textarea id="caption" rows="2" maxlength="300" placeholder="Say what it is..."></textarea>
+    <label for="tags">Hashtags (comma separated)</label>
+    <input id="tags" type="text" placeholder="vyralx, brooklyn">
+    <label for="category">Category</label>
+    <select id="category">
+      <option value="entertainment">Entertainment</option>
+      <option value="music">Music</option>
+      <option value="gaming">Gaming</option>
+      <option value="trending">Trending</option>
+    </select>
+    <p class="form-error" id="up-error"></p>
+    <p class="muted" id="up-status"></p>
+    <button class="btn btn-green btn-block" id="upload" type="button" style="margin-top:10px;">Post to VYRALX</button>
+    <p class="muted" style="font-size:13px;">Free tier: keep clips short (under ~50 MB). Editing tools (trim, filters, text) arrive with Creator Studio in Phase 3.</p>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create active"><span class="ic">+</span>Create</a>
+  <a href="live.html"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script>
+document.getElementById("upload").addEventListener("click", async function () {
+  var err = document.getElementById("up-error");
+  var st = document.getElementById("up-status");
+  err.textContent = ""; st.textContent = "";
+  var sb = window.VX && window.VX.sb;
+  if (!sb) { err.textContent = "Uploads go live when the VYRALX backend finishes setting up."; return; }
+  var u = (await sb.auth.getUser()).data.user;
+  if (!u) { location.href = "auth.html"; return; }
+  var f = document.getElementById("file").files[0];
+  if (!f) { err.textContent = "Pick a video file first."; return; }
+  if (f.size > 50 * 1024 * 1024) { err.textContent = "Free tier limit: keep it under 50 MB."; return; }
+  var btn = this; btn.disabled = true; btn.textContent = "Uploading...";
+  try {
+    var ext = (f.name.split(".").pop() || "mp4").toLowerCase();
+    var path = u.id + "/" + Date.now() + "." + ext;
+    var up = await sb.storage.from("videos").upload(path, f, { contentType: f.type || "video/mp4" });
+    if (up.error) throw up.error;
+    var pub = sb.storage.from("videos").getPublicUrl(path).data.publicUrl;
+    var tags = document.getElementById("tags").value.split(",").map(function (t) {
+      t = t.trim().replace(/^#/, "");
+      return t ? "#" + t : "";
+    }).filter(Boolean);
+    var ins = await sb.from("videos").insert({
+      user_id: u.id,
+      caption: document.getElementById("caption").value.trim(),
+      hashtags: tags,
+      category: document.getElementById("category").value,
+      video_url: pub,
+      storage_path: path
+    });
+    if (ins.error) throw ins.error;
+    st.textContent = "Posted ✅ Taking you to the feed...";
+    setTimeout(function () { location.href = "index.html"; }, 900);
+  } catch (ex) {
+    err.textContent = ex.message || String(ex);
+  } finally {
+    btn.disabled = false; btn.textContent = "Post to VYRALX";
+  }
+});
+</script>
+</body>
+</html>
