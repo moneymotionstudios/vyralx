@@ -34,9 +34,15 @@
     mode = "webrtc";
     pc = new RTCPeerConnection();
     var gotTrack = false;
-    pc.addTransceiver("video", { direction: "recvonly" });
-    pc.addTransceiver("audio", { direction: "recvonly" });
+    var trV = pc.addTransceiver("video", { direction: "recvonly" });
+    var trA = pc.addTransceiver("audio", { direction: "recvonly" });
+    // Cut the receive jitter buffer to the floor — the biggest remaining
+    // delay under our control on the playback side.
+    [trV, trA].forEach(function (tr) {
+      try { tr.receiver.jitterBufferTarget = 0; } catch (e) {}
+    });
     pc.ontrack = function (ev) {
+      try { ev.receiver.jitterBufferTarget = 0; } catch (e) {}
       gotTrack = true;
       if (ev.streams && ev.streams[0]) video.srcObject = ev.streams[0];
       video.play().catch(function () {});
