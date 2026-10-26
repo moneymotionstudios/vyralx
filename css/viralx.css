@@ -158,3 +158,139 @@ h1.chrome{
 #splash .vx-banner-img{width:min(82vw,340px);border-radius:0}
 .auth-banner{max-width:420px;margin:6px auto 14px}
 footer{color:var(--vx-muted);font-size:12.5px;text-align:center;padding:22px 14px 96px;line-height:1.7}
+
+/* ============ VIRALX PRO FANCY LAYER (2026-10-26) ============ */
+/* Ambient animated backdrop */
+body{position:relative}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(600px 300px at 12% -4%, rgba(139,255,0,.13), transparent 60%),
+    radial-gradient(520px 300px at 88% 8%, rgba(255,45,85,.07), transparent 60%),
+    radial-gradient(700px 500px at 50% 108%, rgba(139,255,0,.08), transparent 60%),
+    var(--vx-black);
+}
+::selection{background:var(--vx-green);color:#06130a}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-thumb{background:#232825;border-radius:99px;border:2px solid var(--vx-black)}
+*::-webkit-scrollbar-thumb:hover{background:var(--vx-green-dim)}
+*::-webkit-scrollbar-track{background:transparent}
+
+/* Chrome headings with a moving shine */
+h1.chrome{
+  background:linear-gradient(100deg,#ffffff 0%,#cfd4d1 30%,#7e8781 46%,#ffffff 52%,#e8ece9 62%,#9aa39d 100%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:vxshine 5.5s ease-in-out infinite;
+  filter:drop-shadow(0 2px 14px rgba(139,255,0,.18));
+}
+@keyframes vxshine{0%,100%{background-position:0% 0}50%{background-position:100% 0}}
+.vx-logo{filter:drop-shadow(0 0 12px rgba(139,255,0,.25))}
+
+/* Glass-pro cards with gradient edge + glow */
+.card{
+  position:relative;
+  background:linear-gradient(165deg,rgba(255,255,255,.045),rgba(255,255,255,0) 42%),linear-gradient(180deg,#121614,#0e1110);
+  border:1px solid rgba(139,255,0,.16);
+  box-shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  overflow:hidden;
+}
+.card::before{
+  content:"";position:absolute;top:0;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(139,255,0,.55),transparent);
+}
+.card h2,.card h3{letter-spacing:.01em}
+
+/* Buttons: gradient, shine sweep, press physics */
+.btn{
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#1a1f1c,#12150f);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.07);
+  transition:transform .12s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.btn:active{transform:scale(.965)}
+.btn::after{
+  content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);
+  transform:skewX(-18deg);transition:left .5s ease;pointer-events:none;
+}
+.btn:hover::after,.btn:active::after{left:130%}
+.btn-green{
+  background:linear-gradient(180deg,#a5ff3d,#8BFF00 55%,#6fd400);
+  border-color:#baff70;color:#06130a;
+  box-shadow:0 0 22px rgba(139,255,0,.45), 0 8px 22px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.5);
+}
+.btn-green:active{box-shadow:0 0 10px rgba(139,255,0,.5)}
+
+/* Inputs glow when active */
+input:focus,textarea:focus,select:focus{
+  outline:none;border-color:var(--vx-green);
+  box-shadow:0 0 0 3px rgba(139,255,0,.18), 0 0 18px rgba(139,255,0,.12);
+}
+input,textarea,select{transition:border-color .2s ease, box-shadow .2s ease}
+
+/* Bottom nav: deeper glass, glowing active tab */
+.bottomnav{
+  background:rgba(8,10,9,.82);
+  border-top:1px solid rgba(139,255,0,.22);
+  box-shadow:0 -8px 30px rgba(0,0,0,.5);
+  backdrop-filter:blur(14px);
+}
+.bottomnav a{transition:color .2s ease}
+.bottomnav a.active .ic{filter:drop-shadow(0 0 8px rgba(139,255,0,.8))}
+.bottomnav a.active{position:relative}
+.bottomnav a.active::before{
+  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:26px;height:3px;border-radius:0 0 6px 6px;background:var(--vx-green);
+  box-shadow:0 0 12px rgba(139,255,0,.9);
+}
+
+/* LIVE badge: pulsing ring */
+.live-badge{
+  position:relative;background:linear-gradient(180deg,#ff4d6d,#e10600);
+  box-shadow:0 0 14px rgba(225,6,0,.55);
+  animation:vxlive 1.5s ease-in-out infinite;
+}
+@keyframes vxlive{0%,100%{box-shadow:0 0 8px rgba(225,6,0,.45)}50%{box-shadow:0 0 20px rgba(255,45,85,.85)}}
+
+/* Avatars get a neon ring */
+.avatar{border:2px solid transparent;background:linear-gradient(var(--vx-panel2),var(--vx-panel2)) padding-box,linear-gradient(140deg,var(--vx-green),#3f7a00) border-box;box-shadow:0 0 14px rgba(139,255,0,.25)}
+.profile-head .avatar{box-shadow:0 0 22px rgba(139,255,0,.35)}
+
+/* Feed polish */
+.rail .bubble{box-shadow:0 4px 16px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);transition:transform .15s ease}
+.rail button:active .bubble{transform:scale(1.14)}
+.rail button.liked .bubble{box-shadow:0 0 16px rgba(139,255,0,.5)}
+.grid .cell{transition:transform .18s ease, box-shadow .18s ease}
+.grid .cell:active{transform:scale(.97)}
+.feed-tabs button.active{text-shadow:0 0 12px rgba(139,255,0,.5)}
+.icon-btn{backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.player-wrap{border:1px solid rgba(139,255,0,.2);box-shadow:0 12px 34px rgba(0,0,0,.5)}
+.chat-log{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border-color:rgba(139,255,0,.14)}
+.notice{border-style:solid;border-color:rgba(139,255,0,.35);background:rgba(139,255,0,.05)}
+.stat-row .stat b{background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px}
+
+/* Create-menu cards (page styles set the base; this adds the pop) */
+.menu-item{box-shadow:0 8px 24px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05);transition:transform .14s ease, border-color .2s ease, box-shadow .2s ease}
+.menu-item:active{transform:scale(.97);border-color:var(--vx-green)!important;box-shadow:0 0 18px rgba(139,255,0,.35)}
+.menu-item .mi-ic{filter:drop-shadow(0 3px 8px rgba(0,0,0,.5))}
+
+/* Sparkle field + tap bursts (js/fx.js) */
+#fx-layer{position:fixed;inset:0;z-index:40;pointer-events:none;overflow:hidden}
+.fx-sparkle{position:absolute;top:0;will-change:transform,opacity;animation:fxfloat linear infinite;text-shadow:0 0 10px rgba(255,215,64,.65)}
+@keyframes fxfloat{
+  0%{transform:translate3d(0,105vh,0) rotate(0deg) scale(.7);opacity:0}
+  8%{opacity:.85}
+  50%{transform:translate3d(2.5vw,52vh,0) rotate(160deg) scale(1.05);opacity:.55}
+  92%{opacity:.8}
+  100%{transform:translate3d(-2vw,-6vh,0) rotate(320deg) scale(.7);opacity:0}
+}
+.fx-burst{position:fixed;z-index:90;pointer-events:none;font-size:15px;animation:fxburst .7s ease-out forwards;text-shadow:0 0 8px rgba(255,215,64,.8)}
+@keyframes fxburst{
+  from{transform:translate(0,0) scale(.6);opacity:1}
+  to{transform:translate(var(--dx),var(--dy)) scale(1.25) rotate(70deg);opacity:0}
+}
+@media (prefers-reduced-motion: reduce){
+  #fx-layer,.fx-burst{display:none!important}
+  h1.chrome,.live-badge{animation:none!important}
+}
