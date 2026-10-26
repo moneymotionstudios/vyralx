@@ -19,5 +19,5 @@ window.VX_CONFIG = {
   // the LiveKit project; the API key/secret live ONLY as Supabase secrets
   // (LIVEKIT_API_KEY / LIVEKIT_API_SECRET) used by the lk-token function.
   // Empty = LIVE engine not linked yet (pages say so honestly).
-  LIVEKIT_URL: ""
+  LIVEKIT_URL: "wss://vyral-x-dajwr05z.livekit.cloud"
 };
