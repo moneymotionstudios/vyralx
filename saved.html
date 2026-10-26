@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Saved Vault — VIRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/viralx.css">
+</head>
+<body>
+<main class="page">
+  <h1 class="chrome">💾 Saved Vault</h1>
+  <p class="muted">Everything you save, stored in your VIRALX cloud vault — bookmarked videos, your images, your private video files. 📦</p>
+
+  <div class="card" id="need-login">
+    <p style="margin:0;">Your vault needs a VIRALX account. <a href="auth.html">Sign in or create one</a> — free.</p>
+  </div>
+
+  <div id="vault" class="hidden">
+    <div class="card">
+      <h3 style="margin-top:0;">🔖 Saved videos</h3>
+      <div id="saved-videos"><p class="muted">Loading…</p></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">🖼️ My images</h3>
+      <input type="file" id="img-file" accept="image/*">
+      <button class="btn btn-green btn-block" id="img-upload" type="button" style="margin-top:8px;">⬆️ Save image to vault</button>
+      <p class="form-error" id="img-error"></p>
+      <div class="grid" id="img-grid" style="grid-template-columns:repeat(3,1fr);"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">🎬 My private videos</h3>
+      <p class="muted">Stored in your vault only — these are NOT posted to the feed.</p>
+      <input type="file" id="vid-file" accept="video/*">
+      <button class="btn btn-green btn-block" id="vid-upload" type="button" style="margin-top:8px;">⬆️ Save video to vault</button>
+      <p class="form-error" id="vid-error"></p>
+      <div id="vid-list"></div>
+    </div>
+
+    <p class="muted" style="font-size:13px;">☁️ Storage: VIRALX cloud (Supabase) — live now. Your own-drive and archive routes get added alongside it, nothing moves or disappears.</p>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create"><span class="ic">+</span>Create</a>
+  <a href="live.html"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/saved.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>

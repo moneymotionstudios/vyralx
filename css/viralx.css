@@ -294,3 +294,36 @@ input,textarea,select{transition:border-color .2s ease, box-shadow .2s ease}
   #fx-layer,.fx-burst{display:none!important}
   h1.chrome,.live-badge{animation:none!important}
 }
+
+/* ============ GLITCH LAYER (2026-10-26) ============ */
+/* RGB-split glitch on the wordmark + chrome titles (data-text set by fx.js) */
+.vx-logo, h1.chrome{position:relative}
+.vx-logo::before,.vx-logo::after,
+h1.chrome::before,h1.chrome::after{
+  content:attr(data-text);position:absolute;inset:0;overflow:hidden;pointer-events:none;
+  background:none;-webkit-text-fill-color:currentColor;
+}
+.vx-logo::before,h1.chrome::before{color:#ff2d55;z-index:-1;opacity:0;animation:vxgl1 4.2s infinite steps(1)}
+.vx-logo::after,h1.chrome::after{color:#00e5ff;z-index:-1;opacity:0;animation:vxgl2 3.7s infinite steps(1)}
+@keyframes vxgl1{
+  0%,91%,94.5%,100%{opacity:0;transform:none;clip-path:inset(0 0 0 0)}
+  92%{opacity:.8;transform:translate(-3px,1px);clip-path:inset(12% 0 55% 0)}
+  93.5%{opacity:.8;transform:translate(3px,-1px);clip-path:inset(60% 0 8% 0)}
+}
+@keyframes vxgl2{
+  0%,88%,91.5%,100%{opacity:0;transform:none;clip-path:inset(0 0 0 0)}
+  89%{opacity:.75;transform:translate(3px,0);clip-path:inset(38% 0 34% 0)}
+  90.5%{opacity:.75;transform:translate(-3px,1px);clip-path:inset(4% 0 78% 0)}
+}
+/* Random micro-glitch across the whole app (fx.js toggles .glitching) */
+html.glitching body{filter:hue-rotate(10deg) saturate(1.25) contrast(1.04)}
+html.glitching main{transform:translateX(1.6px) skewX(.4deg)}
+html.glitching .card{box-shadow:3px 0 0 rgba(255,45,85,.35), -3px 0 0 rgba(0,229,255,.3), 0 10px 30px rgba(0,0,0,.45)}
+body{transition:filter .05s linear}
+main{transition:transform .05s linear}
+/* Tap glitch on buttons */
+.btn:active,.menu-item:active{box-shadow:2px 0 0 rgba(255,45,85,.5), -2px 0 0 rgba(0,229,255,.45), 0 6px 18px rgba(0,0,0,.35)}
+@media (prefers-reduced-motion: reduce){
+  .vx-logo::before,.vx-logo::after,h1.chrome::before,h1.chrome::after{animation:none!important}
+  html.glitching body{filter:none} html.glitching main{transform:none}
+}

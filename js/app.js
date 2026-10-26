@@ -90,6 +90,42 @@
       if (navigator.share) navigator.share({ title: "VIRALX", url: url }).catch(function () {});
       else if (navigator.clipboard) navigator.clipboard.writeText(url);
     });
+    var saveBtn = wrap.querySelector(".save-btn");
+    var savedState = false;
+    saveBtn.addEventListener("click", async function () {
+      var label = saveBtn.querySelector("span:last-child");
+      if (!LIVE || !sb || !v.uuid) {
+        label.textContent = "Demo clip";
+        setTimeout(function () { label.textContent = savedState ? "Saved ✓" : "Save"; }, 1600);
+        return;
+      }
+      var u = (await sb.auth.getUser()).data.user;
+      if (!u) { location.href = "auth.html"; return; }
+      if (!savedState) {
+        var ins = await sb.from("bookmarks").insert({ user_id: u.id, video_id: v.uuid });
+        if (ins.error) { label.textContent = "Try again"; setTimeout(function () { label.textContent = "Save"; }, 1600); return; }
+        savedState = true;
+        saveBtn.classList.add("liked");
+        label.textContent = "Saved ✓";
+      } else {
+        await sb.from("bookmarks").delete().eq("user_id", u.id).eq("video_id", v.uuid);
+        savedState = false;
+        saveBtn.classList.remove("liked");
+        label.textContent = "Save";
+      }
+    });
+    // reflect an existing bookmark
+    if (LIVE && sb && v.uuid) {
+      sb.auth.getUser().then(async function (r) {
+        var u = r.data.user; if (!u) return;
+        var q = await sb.from("bookmarks").select("video_id").eq("user_id", u.id).eq("video_id", v.uuid).maybeSingle();
+        if (q.data) {
+          savedState = true;
+          saveBtn.classList.add("liked");
+          saveBtn.querySelector("span:last-child").textContent = "Saved ✓";
+        }
+      }).catch(function () {});
+    }
     return wrap;
   }
 
