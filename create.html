@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#090B0A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Create — VIRALX</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="css/viralx.css">
@@ -52,6 +54,11 @@
       <span class="mi-t">Go LIVE</span>
       <span class="mi-s">Stream live to VIRALX from your phone</span>
     </a>
+    <button class="menu-item hot" type="button" onclick="window.VXInstall&&window.VXInstall()" style="text-align:left;font:inherit;cursor:pointer;">
+      <span class="mi-ic">⬇️</span>
+      <span class="mi-t">Download App</span>
+      <span class="mi-s">Install VIRALX on your home screen — full-screen, like a real app</span>
+    </button>
   </div>
   <div class="card" id="upload-card">
     <label for="file">Video file</label>
@@ -126,5 +133,6 @@ document.getElementById("upload").addEventListener("click", async function () {
   }
 });
 </script>
+<script src="js/install.js"></script>
 </body>
 </html>
