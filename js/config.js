@@ -13,5 +13,6 @@ window.VX_CONFIG = {
   // Livepeer (free tier) — the house channel, live now. Playback is public;
   // the stream key is NOT stored here (it lives in the owner's streaming app).
   LIVEPEER_HLS: "https://livepeercdn.studio/hls/f8d6m0g1wx9nbj5t/index.m3u8",
+  LIVEPEER_WHEP: "https://livepeercdn.studio/webrtc/f8d6m0g1wx9nbj5t",
   LIVEPEER_RTMP: "rtmp://rtmp.livepeer.com/live"
 };
