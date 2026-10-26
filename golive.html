@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>GO LIVE — VIRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/viralx.css">
+<style>
+  .stage { position:relative; background:#000; border-radius:14px; overflow:hidden; aspect-ratio:9/16; max-height:62vh; margin:0 auto; }
+  .stage video { width:100%; height:100%; object-fit:cover; }
+  .stage .live-badge { position:absolute; top:10px; left:10px; }
+  .stage .stage-stats { position:absolute; top:10px; right:10px; background:rgba(0,0,0,.55); color:#fff; border-radius:999px; padding:4px 10px; font-size:13px; }
+  .lower-third { position:absolute; left:10px; bottom:12px; background:linear-gradient(90deg, rgba(139,255,0,.9), rgba(139,255,0,0)); color:#090B0A; font-weight:900; padding:6px 14px 6px 10px; border-radius:8px; font-size:14px; }
+  .float-layer { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .float-emoji { position:absolute; bottom:8%; font-size:30px; animation:floatUp 2.6s ease-out forwards; }
+  @keyframes floatUp { from { transform:translateY(0); opacity:1; } to { transform:translateY(-46vh); opacity:0; } }
+  .golive-btn { background:#E10600; color:#fff; font-size:19px; font-weight:900; letter-spacing:.5px; box-shadow:0 0 22px rgba(225,6,0,.45); }
+</style>
+</head>
+<body>
+<main class="page narrow">
+  <h1 class="chrome">GO LIVE</h1>
+  <p class="muted">Broadcast from your camera, right in the app — real WebRTC, real viewers.</p>
+
+  <div class="card" id="need-login">
+    <p style="margin:0;">GO LIVE needs a VIRALX account. <a href="auth.html">Sign in or create one</a> — free.</p>
+  </div>
+
+  <div id="setup" class="hidden">
+    <div class="stage">
+      <video id="preview" autoplay muted playsinline></video>
+      <span class="live-badge hidden" id="stage-badge">LIVE</span>
+      <span class="stage-stats hidden" id="stage-stats">👁 0 · 0:00</span>
+      <div class="float-layer" id="float-layer"></div>
+      <div class="lower-third hidden" id="pro-overlay">⭐ PRO · <span id="ov-name">@you</span></div>
+    </div>
+    <div class="card" id="setup-form" style="margin-top:12px;">
+      <label for="title">LIVE title</label>
+      <input id="title" type="text" maxlength="80" placeholder="What is this LIVE about?">
+      <label for="category">Category</label>
+      <select id="category">
+        <option value="entertainment">Entertainment</option>
+        <option value="music">Music</option>
+        <option value="gaming">Gaming</option>
+        <option value="trending">Trending</option>
+      </select>
+      <label for="quality">Quality</label>
+      <select id="quality">
+        <option value="360">360p — slow connections</option>
+        <option value="540" selected>540p — standard</option>
+        <option value="720">720p — HD</option>
+      </select>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+        <button class="btn" id="flip" type="button">🔄 Flip camera</button>
+        <button class="btn" id="mic" type="button">🎙️ Mic: on</button>
+        <label class="muted" id="pro-wrap" style="display:none;align-items:center;gap:6px;"><input type="checkbox" id="pro-toggle" style="width:auto;"> ⭐ PRO overlay</label>
+      </div>
+      <p class="form-error" id="go-error"></p>
+      <button class="btn btn-block golive-btn" id="start" type="button" style="margin-top:10px;">🔴 GO LIVE</button>
+      <p class="muted" id="engine-note" style="font-size:13px;"></p>
+    </div>
+  </div>
+
+  <div id="live-ui" class="hidden">
+    <div class="card">
+      <h3 style="margin-top:0;">Guest requests</h3>
+      <div id="guests"><p class="muted">No requests yet. Viewers can ask to join you on camera.</p></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Comments</h3>
+      <div id="comments" class="chat-log" style="min-height:160px;"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Gifts received (test coins)</h3>
+      <div id="gift-feed"><p class="muted">Gifts your viewers send land here.</p></div>
+    </div>
+    <button class="btn btn-block golive-btn" id="end" type="button">End LIVE</button>
+    <div class="card hidden" id="summary" style="margin-top:12px;"></div>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create"><span class="ic">+</span>Create</a>
+  <a href="live.html" class="active"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/golive.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>

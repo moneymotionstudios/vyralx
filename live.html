@@ -17,6 +17,23 @@
   <p class="muted">Watch creators live, chat in real time, send hearts and gifts.</p>
 
   <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <h2 style="margin:0;flex:1;">Creator LIVE rooms</h2>
+      <a class="btn" href="golive.html" style="background:#E10600;color:#fff;font-weight:900;box-shadow:0 0 18px rgba(225,6,0,.45);">🔴 GO LIVE</a>
+    </div>
+    <p class="muted">Real camera broadcasts from VIRALX creators — comments, hearts, gifts and guests included.</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+      <button class="btn btn-green" data-cat="all" type="button">For You</button>
+      <button class="btn" data-cat="following" type="button">Following</button>
+      <button class="btn" data-cat="music" type="button">Music</button>
+      <button class="btn" data-cat="gaming" type="button">Gaming</button>
+      <button class="btn" data-cat="entertainment" type="button">Entertainment</button>
+      <button class="btn" data-cat="trending" type="button">Trending</button>
+    </div>
+    <div id="rooms"><p class="muted">Looking for live rooms…</p></div>
+  </div>
+
+  <div class="card">
     <div style="display:flex;align-items:center;gap:10px;">
       <span class="live-badge">LIVE</span>
       <h2 style="margin:0;">VIRALX house channel</h2>
@@ -29,9 +46,9 @@
   </div>
 
   <div id="live-off" class="card center hidden">
-    <h2 style="margin:12px 0 6px;">Creator rooms + live chat</h2>
-    <p class="muted" style="line-height:1.55;">VIRALX's own streaming stack — SRS + FFmpeg (RTMP/SRT ingest, 720p/480p adaptive), Redis + WebSocket chat, hearts and gifts — is built and fully tested. It switches on when the VIRALX server host connects, adding a room for every creator plus in-app chat. The house channel above is live now.</p>
-    <a class="btn btn-green" href="index.html">Watch the feed meanwhile</a>
+    <h2 style="margin:12px 0 6px;">Creator rooms run on WebRTC now</h2>
+    <p class="muted" style="line-height:1.55;">Every creator gets a real LiveKit room — broadcast from the camera right in the app (GO LIVE at the top of this page), or watch the house channel above. The self-hosted SRS stack stays in reserve as the scale-up path.</p>
+    <a class="btn btn-green" href="golive.html">GO LIVE in the app</a>
   </div>
 
   <div id="live-on" class="hidden">
@@ -88,6 +105,7 @@
 <script src="js/app.js"></script>
 <script src="js/livepeer.js"></script>
 <script src="js/live.js"></script>
+<script src="js/rooms.js"></script>
 <script src="js/install.js"></script>
 </body>
 </html>

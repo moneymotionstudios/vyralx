@@ -14,5 +14,10 @@ window.VX_CONFIG = {
   // the stream key is NOT stored here (it lives in the owner's streaming app).
   LIVEPEER_HLS: "https://livepeercdn.studio/hls/f8d6m0g1wx9nbj5t/index.m3u8",
   LIVEPEER_WHEP: "https://livepeercdn.studio/webrtc/f8d6m0g1wx9nbj5t",
-  LIVEPEER_RTMP: "rtmp://rtmp.livepeer.com/live"
+  LIVEPEER_RTMP: "rtmp://rtmp.livepeer.com/live",
+  // LiveKit (creator rooms — golive.html / watch.html). Public wss URL of
+  // the LiveKit project; the API key/secret live ONLY as Supabase secrets
+  // (LIVEKIT_API_KEY / LIVEKIT_API_SECRET) used by the lk-token function.
+  // Empty = LIVE engine not linked yet (pages say so honestly).
+  LIVEKIT_URL: ""
 };

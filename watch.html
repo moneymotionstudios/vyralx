@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Watch LIVE — VIRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/viralx.css">
+<style>
+  .stage { position:relative; background:#000; border-radius:14px; overflow:hidden; aspect-ratio:9/16; max-height:64vh; margin:0 auto; }
+  .stage .vgrid { display:grid; width:100%; height:100%; }
+  .stage .vgrid.split { grid-template-rows:1fr 1fr; }
+  .stage video { width:100%; height:100%; object-fit:cover; background:#000; }
+  .stage .live-badge { position:absolute; top:10px; left:10px; z-index:3; }
+  .stage .stage-stats { position:absolute; top:10px; right:10px; z-index:3; background:rgba(0,0,0,.55); color:#fff; border-radius:999px; padding:4px 10px; font-size:13px; }
+  .float-layer { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:2; }
+  .float-emoji { position:absolute; bottom:8%; font-size:32px; animation:floatUp 2.6s ease-out forwards; }
+  @keyframes floatUp { from { transform:translateY(0); opacity:1; } to { transform:translateY(-46vh); opacity:0; } }
+  .gift-pop { position:absolute; left:50%; top:38%; transform:translate(-50%,-50%); font-size:74px; z-index:4; animation:giftPop 2.2s ease-out forwards; pointer-events:none; }
+  @keyframes giftPop { 0% { transform:translate(-50%,-50%) scale(.3); opacity:0; } 18% { transform:translate(-50%,-50%) scale(1.15); opacity:1; } 78% { opacity:1; } 100% { transform:translate(-50%,-60%) scale(1); opacity:0; } }
+</style>
+</head>
+<body>
+<main class="page narrow">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="live-badge" id="w-badge">LIVE</span>
+    <h1 class="chrome" id="w-title" style="font-size:22px;margin:0;">Loading…</h1>
+  </div>
+  <p class="muted" id="w-host"></p>
+
+  <div class="stage">
+    <div class="vgrid" id="vgrid"></div>
+    <span class="stage-stats" id="w-stats">👁 0</span>
+    <div class="float-layer" id="float-layer"></div>
+  </div>
+  <p class="form-error" id="w-error"></p>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;">
+    <button class="btn btn-green" id="follow" type="button">Follow</button>
+    <button class="btn" id="heart" type="button">❤️ Heart</button>
+    <button class="btn" id="gift" type="button">🎁 Gift</button>
+    <button class="btn" id="guest" type="button">🙋 Join as guest</button>
+    <button class="btn" id="share" type="button">↗ Share</button>
+    <button class="btn" id="report" type="button">⚑ Report</button>
+  </div>
+  <p class="muted" id="guest-status"></p>
+  <div class="hidden" id="guest-live" style="margin-bottom:10px;">
+    <video id="guest-preview" autoplay muted playsinline style="width:100%;border-radius:12px;"></video>
+    <button class="btn" id="guest-leave" type="button" style="margin-top:8px;">Leave guest spot</button>
+  </div>
+
+  <div class="card hidden" id="gift-sheet">
+    <h3 style="margin-top:0;">Send a gift — <span style="color:#8BFF00;">test coins</span></h3>
+    <p class="muted">Balance: <b id="coin-balance">…</b> test coins (no real money — development coins).</p>
+    <div id="gift-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+    <p class="form-error" id="gift-error"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Comments</h3>
+    <div id="comments" class="chat-log" style="min-height:180px;"></div>
+    <form id="cform" style="display:flex;gap:8px;">
+      <input id="cinput" type="text" maxlength="300" placeholder="Say something…" style="flex:1;">
+      <button class="btn btn-green" type="submit">Send</button>
+    </form>
+    <p class="muted" style="font-size:13px;">Comments need a VIRALX account. Be cool — hosts and moderators can delete comments and mute.</p>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create"><span class="ic">+</span>Create</a>
+  <a href="live.html" class="active"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/watch.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>
