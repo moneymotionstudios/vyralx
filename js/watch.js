@@ -234,7 +234,13 @@
     });
     channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_streams", filter: "id=eq." + streamId }, function (p) {
       $("w-stats").textContent = "👁 " + (p.new.viewer_count || 0);
-      if (p.new.status === "ended") $("w-error").textContent = "The host ended this LIVE.";
+      if (p.new.status === "ended") {
+        // Close the room cleanly on the viewer side too.
+        if (room) { try { room.disconnect(); } catch (e) {} room = null; }
+        $("vgrid").innerHTML = "";
+        $("w-badge").textContent = "ENDED";
+        $("w-error").textContent = "The host ended this LIVE.";
+      }
     });
     channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_guest_requests", filter: "stream_id=eq." + streamId }, function (p) {
       if (me && p.new.user_id === me.id) {

@@ -14,8 +14,10 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  var authToken = "";
   async function fn(name, body) {
     var sess = (await sb.auth.getSession()).data.session;
+    if (sess) authToken = sess.access_token;
     var res = await fetch(cfg.SUPABASE_URL + "/functions/v1/" + name, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + (sess ? sess.access_token : ""), "apikey": cfg.SUPABASE_ANON_KEY },
@@ -140,11 +142,32 @@
 
   function addComment(c) {
     var log = $("comments");
+    if (document.getElementById("c-" + c.id)) return;
     var d = document.createElement("div");
+    d.id = "c-" + c.id;
     d.innerHTML = "<b>" + esc(c.username) + ":</b> " + esc(c.body);
     log.appendChild(d);
     log.scrollTop = log.scrollHeight;
   }
+
+  var lastSent = 0;
+  var BANNED = ["spam", "free money", "crypto giveaway", "http://", "https://", "www."];
+  $("cform").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    if (!stream || !me) return;
+    var now = Date.now();
+    if (now - lastSent < 1200) return;
+    var body = $("cinput").value.trim();
+    if (!body) return;
+    var low = body.toLowerCase();
+    for (var i = 0; i < BANNED.length; i++) {
+      if (low.indexOf(BANNED[i]) !== -1) { alert("That message was blocked by the spam filter."); return; }
+    }
+    lastSent = now;
+    var ins = await sb.from("live_comments").insert({ stream_id: stream.id, user_id: me.id, username: myName, body: body.slice(0, 300) });
+    if (ins.error) { alert(ins.error.message); return; }
+    $("cinput").value = "";
+  });
 
   async function loadGuests() {
     var q = await sb.from("live_guest_requests").select("*").eq("stream_id", stream.id).order("created_at", { ascending: true });
@@ -189,19 +212,50 @@
     });
   }
 
-  $("end").addEventListener("click", async function () {
-    if (!stream) return;
-    this.disabled = true;
-    try { await room && room.disconnect(); } catch (e) {}
-    try {
-      var out = await fn("live-control", { action: "end", stream_id: stream.id });
-      var mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
-      var s = $("summary");
-      s.classList.remove("hidden");
-      s.innerHTML = "<h3 style='margin-top:0;'>LIVE ended</h3><p class='muted'>On air ~" + mins + " min · Peak viewers: " + (out.peak_viewers || 0) + " · Gifts: " + giftTotal + " test coins</p><a class='btn btn-green' href='live.html'>Back to LIVE</a>";
-    } catch (e) { alert(e.message); }
-    clearInterval(timer);
+  var ending = false;
+  async function endLive(showSummary) {
+    if (!stream || ending) return;
+    ending = true;
+    var endedStream = stream;
     stream = null;
+    clearInterval(timer);
+    // 1) Close the room for everyone and kill the camera/mic for real.
+    if (room) { try { await room.disconnect(); } catch (e) {} room = null; }
+    localTracks.forEach(function (t) { try { t.stop(); } catch (e) {} });
+    localTracks = [];
+    var pv = $("preview"); if (pv) pv.srcObject = null;
+    $("stage-badge").classList.add("hidden");
+    $("stage-stats").classList.add("hidden");
+    // 2) Mark it ended in the backend so it leaves discovery instantly.
+    try {
+      var out = await fn("live-control", { action: "end", stream_id: endedStream.id });
+      if (showSummary) {
+        var mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
+        var s = $("summary");
+        s.classList.remove("hidden");
+        s.innerHTML = "<h3 style='margin-top:0;'>LIVE ended</h3><p class='muted'>On air ~" + mins + " min · Peak viewers: " + (out.peak_viewers || 0) + " · Gifts: " + giftTotal + " test coins</p><a class='btn btn-green' href='live.html' style='margin-right:8px;'>Back to LIVE</a><a class='btn' href='golive.html'>Go again</a>";
+        $("end").classList.add("hidden");
+      }
+    } catch (e) { if (showSummary) alert(e.message); }
+    ending = false;
+  }
+
+  $("end").addEventListener("click", function () { endLive(true); });
+
+  // Closing the tab/app mid-LIVE also ends it properly (best effort).
+  window.addEventListener("beforeunload", function () {
+    if (stream) {
+      if (room) { try { room.disconnect(); } catch (e) {} }
+      localTracks.forEach(function (t) { try { t.stop(); } catch (e) {} });
+      try {
+        // fire-and-forget with keepalive so the end still lands
+        fetch(cfg.SUPABASE_URL + "/functions/v1/live-control", {
+          method: "POST", keepalive: true,
+          headers: { "Content-Type": "application/json", "apikey": cfg.SUPABASE_ANON_KEY, "Authorization": "Bearer " + authToken },
+          body: JSON.stringify({ action: "end", stream_id: stream.id })
+        });
+      } catch (e) {}
+    }
   });
 
   (async function () {
