@@ -9,5 +9,9 @@ window.VX_CONFIG = {
   //   HLS  http://<host>:8080/live/<stream>.m3u8   (+ _720p / _480p tiers)
   //   Chat ws://<host>:8081   Ingest rtmp://<host>:1935/live
   // Empty = streaming host not connected yet.
-  STREAM_HOST: ""
+  STREAM_HOST: "",
+  // Livepeer (free tier) — the house channel, live now. Playback is public;
+  // the stream key is NOT stored here (it lives in the owner's streaming app).
+  LIVEPEER_HLS: "https://livepeercdn.studio/hls/f8d6m0g1wx9nbj5t/index.m3u8",
+  LIVEPEER_RTMP: "rtmp://rtmp.livepeer.com/live"
 };

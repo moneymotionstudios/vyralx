@@ -14,11 +14,21 @@
   <h1 class="chrome">LIVE</h1>
   <p class="muted">Watch creators live, chat in real time, send hearts and gifts.</p>
 
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="live-badge">LIVE</span>
+      <h2 style="margin:0;">VYRALX house channel</h2>
+    </div>
+    <div class="player-wrap"><video id="lp-player" controls playsinline></video></div>
+    <p class="muted" id="lp-status" style="margin:8px 0 0;">Checking whether the channel is live…</p>
+    <p class="muted" style="line-height:1.55;">Go live to this channel from OBS or a phone app (Larix, Streamlabs):<br>
+    Server: <b>rtmp://rtmp.livepeer.com/live</b><br>
+    Stream key: the channel key from the owner (kept private, never posted publicly).</p>
+  </div>
+
   <div id="live-off" class="card center hidden">
-    <span class="live-badge">LIVE</span>
-    <h2 style="margin:12px 0 6px;">The streaming engine is built</h2>
-    <p class="muted" style="line-height:1.55;">VYRALX runs on its own streaming stack — SRS + FFmpeg (RTMP/SRT ingest, 720p/480p adaptive), Redis + WebSocket chat, hearts and gifts. The full pipeline is tested and working.</p>
-    <p class="muted">Last step: the streaming server needs a public host (any computer or VPS running the stack). The moment a host is connected, this page turns into the live floor — no rebuild needed.</p>
+    <h2 style="margin:12px 0 6px;">Creator rooms + live chat</h2>
+    <p class="muted" style="line-height:1.55;">VYRALX's own streaming stack — SRS + FFmpeg (RTMP/SRT ingest, 720p/480p adaptive), Redis + WebSocket chat, hearts and gifts — is built and fully tested. It switches on when the VYRALX server host connects, adding a room for every creator plus in-app chat. The house channel above is live now.</p>
     <a class="btn btn-green" href="index.html">Watch the feed meanwhile</a>
   </div>
 
@@ -74,6 +84,7 @@
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
+<script src="js/livepeer.js"></script>
 <script src="js/live.js"></script>
 </body>
 </html>
