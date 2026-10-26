@@ -207,7 +207,7 @@
     $("studio-ui").classList.remove("hidden");
     var dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     var c = await sb.from("vx_generations").select("id", { count: "exact", head: true }).gte("created_at", dayStart.toISOString());
-    if (!c.error) $("quota").textContent = "AI generations today: " + (c.count || 0) + " of 10.";
+    if (!c.error) $("quota").textContent = "AI generations today: " + (c.count || 0) + " (free: 10/day · PRO: 100/day).";
     loadGens();
   })();
 })();

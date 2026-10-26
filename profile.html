@@ -71,7 +71,7 @@
   document.getElementById("signed-in").classList.remove("hidden");
   var pr = await sb.from("profiles").select("*").eq("id", u.id).maybeSingle();
   if (pr.data) {
-    document.getElementById("p-name").textContent = pr.data.display_name || pr.data.username;
+    document.getElementById("p-name").textContent = (pr.data.display_name || pr.data.username) + (pr.data.is_pro ? " ⭐PRO" : "");
     document.getElementById("p-username").textContent = "@" + pr.data.username + (pr.data.verified ? " ✔" : "");
     document.getElementById("p-bio").textContent = pr.data.bio || "";
     document.getElementById("p-avatar").textContent = (pr.data.username || "?").charAt(0).toUpperCase();

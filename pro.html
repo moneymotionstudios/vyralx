@@ -71,12 +71,26 @@
     <div class="perk"><span class="pi">🧪</span><div><b>First access</b><span>New models and features land for Pro first.</span></div></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="pro-buy">
     <h3 style="margin-top:0;">Go Pro</h3>
     <p style="font-size:30px;font-weight:900;margin:2px 0 6px;">$14.99<span style="font-size:15px;color:#9DB3A4;font-weight:600;">/month</span></p>
-    <p class="muted">Pro checkout opens the moment payments are wired into VIRALX — everything above is already built and waiting. No charges happen until checkout is live.</p>
-    <button class="btn btn-block" type="button" disabled style="opacity:.55;">PRO — $14.99/mo, checkout coming soon</button>
-    <p class="muted" style="font-size:13px;">Until then, the full creator menu above is free to use. Get the app on every device: <a href="download.html">Download VIRALX</a>.</p>
+    <div id="pro-state"><p class="muted">Checking your account…</p></div>
+    <div id="pro-methods" class="hidden">
+      <p class="muted">Pay with the app you use — tap one to start your order:</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-green" type="button" data-method="cashapp">Cash App — $LYNXUNLIMITEDMUSIC</button>
+        <button class="btn" type="button" data-method="venmo">Venmo</button>
+        <button class="btn" type="button" data-method="chime">Chime — $Johnnie-Gannaway</button>
+      </div>
+    </div>
+    <div id="pro-order"></div>
+    <div id="pro-orders"></div>
+    <p class="muted" style="font-size:13px;">Pro is renewed by hand each month (these apps can't auto-charge). Get VIRALX on every device: <a href="download.html">Download the app</a>.</p>
+  </div>
+
+  <div class="card hidden" id="owner-panel">
+    <h3 style="margin-top:0;">🔑 Owner — pending Pro payments</h3>
+    <div id="owner-list"><p class="muted">Loading…</p></div>
   </div>
 </main>
 
@@ -88,6 +102,10 @@
   <a href="profile.html"><span class="ic">◉</span>Profile</a>
 </nav>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pro.js"></script>
 <script src="js/install.js"></script>
 </body>
 </html>
