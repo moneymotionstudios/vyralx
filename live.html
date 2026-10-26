@@ -6,20 +6,60 @@
 <meta name="theme-color" content="#090B0A">
 <title>LIVE — VYRALX</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/vyralx.css">
 </head>
 <body>
 <main class="page">
   <h1 class="chrome">LIVE</h1>
-  <p class="muted">Watch creators live, chat in real time, send gifts.</p>
-  <div class="card center">
+  <p class="muted">Watch creators live, chat in real time, send hearts and gifts.</p>
+
+  <div id="live-off" class="card center hidden">
     <span class="live-badge">LIVE</span>
-    <h2 style="margin:12px 0 6px;">Livestreaming lands in Phase 4</h2>
-    <p class="muted" style="line-height:1.55;">The LIVE floor is built into the plan from day one — public streams, live chat, reactions, gifts, and the Pro Production Room. Broadcasting needs a streaming provider wired in (free tier), and that hookup is Phase 4 of the build, after accounts, uploads, and the feed.</p>
-    <p class="muted">Nothing here is fake: when streams go live, they will be real streams.</p>
+    <h2 style="margin:12px 0 6px;">The streaming engine is built</h2>
+    <p class="muted" style="line-height:1.55;">VYRALX runs on its own streaming stack — SRS + FFmpeg (RTMP/SRT ingest, 720p/480p adaptive), Redis + WebSocket chat, hearts and gifts. The full pipeline is tested and working.</p>
+    <p class="muted">Last step: the streaming server needs a public host (any computer or VPS running the stack). The moment a host is connected, this page turns into the live floor — no rebuild needed.</p>
     <a class="btn btn-green" href="index.html">Watch the feed meanwhile</a>
   </div>
-  <div id="live-list"></div>
+
+  <div id="live-on" class="hidden">
+    <div class="card">
+      <label for="stream-name">Stream name (the creator's stream key)</label>
+      <div style="display:flex;gap:8px;">
+        <input id="stream-name" type="text" placeholder="e.g. keyz" style="flex:1;">
+        <button class="btn btn-green" id="watch-btn" type="button">Watch</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-green" data-q="" type="button">Source</button>
+        <button class="btn" data-q="_720p" type="button">720p</button>
+        <button class="btn" data-q="_480p" type="button">480p</button>
+        <span class="muted" id="now-watching"></span>
+      </div>
+      <div class="player-wrap"><video id="player" controls playsinline muted></video></div>
+      <p class="muted" style="margin:8px 0 0;">👁 <span id="viewer-count">0</span> watching · ❤️ <span id="heart-count">0</span></p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Live chat</h3>
+      <div id="chat-log" class="chat-log"></div>
+      <form id="chat-form" style="display:flex;gap:8px;">
+        <input id="chat-input" type="text" maxlength="300" placeholder="Say something..." style="flex:1;">
+        <button class="btn btn-green" type="submit">Send</button>
+      </form>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn" id="heart-btn" type="button">❤️ Heart</button>
+        <button class="btn" id="gift-btn" type="button">🐉 Send dragon (free test)</button>
+      </div>
+      <p class="muted" style="font-size:13px;">Chat needs a VYRALX account — <a href="auth.html">sign in</a> first.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Go live yourself</h3>
+      <p class="muted" style="line-height:1.55;">From OBS or a phone streaming app (Larix, Streamlabs):<br>
+      Server: <b id="ingest-url">rtmp://…:1935/live</b><br>
+      Stream key: your stream name — pick one and tell your viewers to enter it above.</p>
+    </div>
+  </div>
 </main>
 
 <nav class="bottomnav">
@@ -31,7 +71,9 @@
 </nav>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
+<script src="js/live.js"></script>
 </body>
 </html>
