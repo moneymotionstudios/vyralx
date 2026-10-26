@@ -1,4 +1,4 @@
-// VYRALX auth — Supabase Auth (email/password) + profile creation on sign-up.
+// VIRALX auth — Supabase Auth (email/password) + profile creation on sign-up.
 (function () {
   var sb = window.VX && window.VX.sb;
   var mode = "signin";

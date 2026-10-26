@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#090B0A">
-<title>Create — VYRALX</title>
+<title>Create — VIRALX</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="css/vyralx.css">
+<link rel="stylesheet" href="css/viralx.css">
 </head>
 <body>
 <main class="page narrow">
@@ -18,7 +18,7 @@
     <label for="caption">Caption</label>
     <textarea id="caption" rows="2" maxlength="300" placeholder="Say what it is..."></textarea>
     <label for="tags">Hashtags (comma separated)</label>
-    <input id="tags" type="text" placeholder="vyralx, brooklyn">
+    <input id="tags" type="text" placeholder="viralx, brooklyn">
     <label for="category">Category</label>
     <select id="category">
       <option value="entertainment">Entertainment</option>
@@ -28,7 +28,7 @@
     </select>
     <p class="form-error" id="up-error"></p>
     <p class="muted" id="up-status"></p>
-    <button class="btn btn-green btn-block" id="upload" type="button" style="margin-top:10px;">Post to VYRALX</button>
+    <button class="btn btn-green btn-block" id="upload" type="button" style="margin-top:10px;">Post to VIRALX</button>
     <p class="muted" style="font-size:13px;">Free tier: keep clips short (under ~50 MB). Editing tools (trim, filters, text) arrive with Creator Studio in Phase 3.</p>
   </div>
 </main>
@@ -50,7 +50,7 @@ document.getElementById("upload").addEventListener("click", async function () {
   var st = document.getElementById("up-status");
   err.textContent = ""; st.textContent = "";
   var sb = window.VX && window.VX.sb;
-  if (!sb) { err.textContent = "Uploads go live when the VYRALX backend finishes setting up."; return; }
+  if (!sb) { err.textContent = "Uploads go live when the VIRALX backend finishes setting up."; return; }
   var u = (await sb.auth.getUser()).data.user;
   if (!u) { location.href = "auth.html"; return; }
   var f = document.getElementById("file").files[0];
@@ -81,7 +81,7 @@ document.getElementById("upload").addEventListener("click", async function () {
   } catch (ex) {
     err.textContent = ex.message || String(ex);
   } finally {
-    btn.disabled = false; btn.textContent = "Post to VYRALX";
+    btn.disabled = false; btn.textContent = "Post to VIRALX";
   }
 });
 </script>

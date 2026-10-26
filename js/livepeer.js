@@ -1,4 +1,4 @@
-// VYRALX house channel — Livepeer playback.
+// VIRALX house channel — Livepeer playback.
 // Tries WebRTC (WHEP, ~1s latency) first, falls back to tuned HLS.
 // Liveness is read from the HLS playlist body: Livepeer answers 200 with an
 // EXT-X-ERROR playlist while idle, so the status code alone cannot be trusted.

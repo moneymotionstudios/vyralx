@@ -1,4 +1,4 @@
-// VYRALX configuration.
+// VIRALX configuration.
 // Its own Supabase project ("vyralx") — separate from the studio apps.
 // While the keys are empty the app runs in DEMO MODE with seed content.
 window.VX_CONFIG = {

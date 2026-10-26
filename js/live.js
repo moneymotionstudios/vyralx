@@ -1,4 +1,4 @@
-// VYRALX LIVE — watch page: HLS player (source/720p/480p), live chat,
+// VIRALX LIVE — watch page: HLS player (source/720p/480p), live chat,
 // hearts and gifts over the streaming stack's WebSocket (see streaming/).
 (function () {
   var cfg = window.VX_CONFIG || {};

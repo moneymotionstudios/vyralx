@@ -1,4 +1,4 @@
-// VYRALX — shared app logic: splash, feed rendering, likes, backend wiring.
+// VIRALX — shared app logic: splash, feed rendering, likes, backend wiring.
 // Backend: Supabase (project "vyralx"). Falls back to DEMO seed content until
 // js/config.js carries the project URL + publishable key.
 (function () {
@@ -33,7 +33,7 @@
     {
       id: "seed-1", username: "keyzondabeatz37", verified: true,
       caption: "Chrome dragon over Brooklyn — made with BLACK DRAGON AI 🐉",
-      tags: ["#vyralx", "#brooklyn", "#ai"],
+      tags: ["#viralx", "#brooklyn", "#ai"],
       video_url: "https://v3b.fal.media/files/b/0aafbf19/yq8Kc81ABSbPK24aLH3Sv_video.mp4",
       likes: 128, comments: 14, category: "entertainment"
     },
@@ -87,7 +87,7 @@
     });
     wrap.querySelector(".share-btn").addEventListener("click", function () {
       var url = location.href;
-      if (navigator.share) navigator.share({ title: "VYRALX", url: url }).catch(function () {});
+      if (navigator.share) navigator.share({ title: "VIRALX", url: url }).catch(function () {});
       else if (navigator.clipboard) navigator.clipboard.writeText(url);
     });
     return wrap;
