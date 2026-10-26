@@ -40,14 +40,18 @@
   function help() {
     var ua = navigator.userAgent || "";
     var isIOS = /iphone|ipad|ipod/i.test(ua);
+    var isAndroid = /android/i.test(ua);
     var steps = isIOS
       ? "<b>On iPhone (Safari):</b><br>1. Tap the <b>Share</b> button (square with an arrow)<br>2. Scroll down, tap <b>Add to Home Screen</b><br>3. Tap <b>Add</b> — VIRALX lands on your home screen like an app."
-      : "<b>On Android (Chrome):</b><br>1. Tap the <b>⋮ menu</b> (top right)<br>2. Tap <b>Install app</b> or <b>Add to Home screen</b><br>3. Tap <b>Install</b> — VIRALX lands on your home screen like an app.";
+      : isAndroid
+      ? "<b>On Android (Chrome):</b><br>1. Tap the <b>⋮ menu</b> (top right)<br>2. Tap <b>Install app</b> or <b>Add to Home screen</b><br>3. Tap <b>Install</b> — VIRALX lands on your home screen like an app."
+      : "<b>On Windows / Mac (Chrome or Edge):</b><br>1. Click the <b>install icon</b> at the right end of the address bar<br>2. Or open the browser menu → <b>Install VIRALX</b><br>3. Click <b>Install</b> — VIRALX opens in its own window, with a shortcut like a store app.<br><span style='color:#9DB3A4'>On Mac Safari: File → Add to Dock…</span>";
     var m = document.createElement("div");
     m.setAttribute("style", "position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px;");
     m.innerHTML = '<div style="background:#101312;border:1px solid #232826;border-radius:16px;padding:20px;max-width:420px;width:100%;color:#E8F5E9;line-height:1.55;">' +
       '<h3 style="margin:0 0 10px;">⬇️ Get the VIRALX app</h3><p style="margin:0 0 12px;">' + steps + '</p>' +
-      '<button type="button" style="background:#8BFF00;color:#090B0A;border:none;border-radius:10px;padding:10px 16px;font-weight:800;width:100%;cursor:pointer;">Got it</button></div>';
+      '<button type="button" style="background:#8BFF00;color:#090B0A;border:none;border-radius:10px;padding:10px 16px;font-weight:800;width:100%;cursor:pointer;">Got it</button>' +
+      '<p style="margin:10px 0 0;text-align:center;"><a href="download.html" style="color:#8BFF00;">All platforms — Android, iPhone, Windows, Mac →</a></p></div>';
     m.addEventListener("click", function (e) { if (e.target === m || e.target.tagName === "BUTTON") m.remove(); });
     document.body.appendChild(m);
   }
