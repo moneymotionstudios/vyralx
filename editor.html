@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<title>Creator Studio — VIRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/viralx.css">
+</head>
+<body>
+<main class="page narrow">
+  <h1 class="chrome">CREATOR STUDIO</h1>
+  <p class="muted">Edit right in the app — AutoCut kills the dead air, then trim, text, filters and export straight to the feed.</p>
+
+  <div class="card">
+    <label for="file">Your video</label>
+    <input id="file" type="file" accept="video/*">
+    <div class="player-wrap"><video id="preview" controls playsinline></video></div>
+    <p class="muted" id="meta"></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">✂️ AutoCut</h3>
+    <p class="muted">Finds silences and cuts them out automatically — the jump-cut look, no manual work.</p>
+    <button class="btn btn-green" id="autocut" type="button">Run AutoCut</button>
+    <p class="muted" id="autocut-status"></p>
+
+    <h3>Trim</h3>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;"><label for="tstart">Start (sec)</label><input id="tstart" type="number" min="0" step="0.1" value="0"></div>
+      <div style="flex:1;"><label for="tend">End (sec, 0 = to the end)</label><input id="tend" type="number" min="0" step="0.1" value="0"></div>
+    </div>
+
+    <h3>Look</h3>
+    <label for="filter">Filter</label>
+    <select id="filter">
+      <option value="">None</option>
+      <option value="toxic">VIRALX Toxic (green pop)</option>
+      <option value="cinematic">Cinematic</option>
+      <option value="vivid">Vivid</option>
+      <option value="bw">Black &amp; White</option>
+      <option value="vintage">Vintage</option>
+    </select>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:8px;"><input type="checkbox" id="crop916" style="width:auto;"> Crop to 9:16 vertical</label>
+    <label for="speed">Speed</label>
+    <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
+
+    <h3>Text overlay</h3>
+    <label for="text">Text (burned into the video)</label>
+    <input id="text" type="text" maxlength="60" placeholder="YOUR HOOK HERE">
+    <label for="textpos">Position</label>
+    <select id="textpos"><option value="top">Top</option><option value="middle">Middle</option><option value="bottom" selected>Bottom</option></select>
+  </div>
+
+  <div class="card">
+    <button class="btn btn-green btn-block" id="export" type="button">Export video</button>
+    <p class="muted" id="export-status"></p>
+    <div class="player-wrap hidden" id="out-wrap"><video id="out" controls playsinline loop></video></div>
+    <div id="out-actions" class="hidden" style="display:flex;gap:8px;margin-top:8px;">
+      <a class="btn" id="download" href="#" download="viralx-edit.mp4">Download</a>
+      <button class="btn btn-green" id="post" type="button">Post to feed</button>
+    </div>
+    <p class="muted" id="post-status"></p>
+    <p class="muted" style="font-size:13px;">Editing runs on your phone — big 4K files are slow. Short clips fly.</p>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create active"><span class="ic">+</span>Create</a>
+  <a href="live.html"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script type="module" src="js/editor.js"></script>
+</body>
+</html>

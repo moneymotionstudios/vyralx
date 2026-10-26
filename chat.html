@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<title>AI Chat — VIRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/viralx.css">
+</head>
+<body>
+<main class="page narrow">
+  <h1 class="chrome">AI CHAT</h1>
+  <p class="muted">Free AI models — write video prompts, captions, hooks and ideas. Then take the prompt to <a href="studio.html">AI Studio</a>.</p>
+
+  <div class="card" id="need-login">
+    <p style="margin:0;">AI Chat needs a VIRALX account. <a href="auth.html">Sign in or create one</a> — free.</p>
+  </div>
+
+  <div id="chat-ui" class="hidden">
+    <div class="card">
+      <label for="model">Model (all free)</label>
+      <select id="model"></select>
+      <div id="log" class="chat-log" style="min-height:220px;"></div>
+      <form id="form" style="display:flex;gap:8px;">
+        <input id="input" type="text" maxlength="4000" placeholder="Ask for a prompt, a caption, an idea…" style="flex:1;">
+        <button class="btn btn-green" type="submit" id="send">Send</button>
+      </form>
+      <p class="form-error" id="chat-error"></p>
+      <p class="muted" style="font-size:13px;">Free models can stall at busy times — if one does, switch models and send again.</p>
+    </div>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create active"><span class="ic">+</span>Create</a>
+  <a href="live.html"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/vxchat.js"></script>
+</body>
+</html>

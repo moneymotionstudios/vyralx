@@ -7,12 +7,53 @@
 <title>Create — VIRALX</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="css/viralx.css">
+<style>
+  .menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .menu-item { display:block; background:#101312; border:1px solid #232826; border-radius:14px; padding:14px 12px; text-decoration:none; color:#E8F5E9; }
+  .menu-item:active { border-color:#8BFF00; }
+  .menu-item .mi-ic { font-size:26px; display:block; margin-bottom:6px; }
+  .menu-item .mi-t { font-weight:800; font-size:15px; display:block; }
+  .menu-item .mi-s { color:#9DB3A4; font-size:12px; display:block; margin-top:2px; line-height:1.35; }
+  .menu-item.hot { border-color:#8BFF00; background:linear-gradient(160deg,#14230a,#101312); }
+</style>
 </head>
 <body>
 <main class="page narrow">
   <h1 class="chrome">CREATE</h1>
-  <p class="muted">Upload a vertical video and put it on the feed.</p>
-  <div class="card">
+  <p class="muted">Everything you can make on VIRALX — pick one:</p>
+  <div class="menu-grid">
+    <a class="menu-item hot" href="studio.html">
+      <span class="mi-ic">🎬</span>
+      <span class="mi-t">AI Video</span>
+      <span class="mi-s">Type it or use a photo — ComfyUI, Seedance &amp; Wan make the video</span>
+    </a>
+    <a class="menu-item hot" href="studio.html#avatar">
+      <span class="mi-ic">🗣️</span>
+      <span class="mi-t">AI Avatar</span>
+      <span class="mi-s">Your photo + your voice becomes a talking avatar video</span>
+    </a>
+    <a class="menu-item" href="editor.html">
+      <span class="mi-ic">✂️</span>
+      <span class="mi-t">Video Editor</span>
+      <span class="mi-s">AutoCut dead air, trim, filters, speed, text overlay, 9:16</span>
+    </a>
+    <a class="menu-item" href="chat.html">
+      <span class="mi-ic">🤖</span>
+      <span class="mi-t">AI Chat</span>
+      <span class="mi-s">Free AI that writes your prompts, captions &amp; hooks</span>
+    </a>
+    <a class="menu-item" href="#upload-card">
+      <span class="mi-ic">⬆️</span>
+      <span class="mi-t">Upload Video</span>
+      <span class="mi-s">Post a clip straight from your phone to the feed</span>
+    </a>
+    <a class="menu-item" href="live.html">
+      <span class="mi-ic">🔴</span>
+      <span class="mi-t">Go LIVE</span>
+      <span class="mi-s">Stream live to VIRALX from your phone</span>
+    </a>
+  </div>
+  <div class="card" id="upload-card">
     <label for="file">Video file</label>
     <input id="file" type="file" accept="video/*">
     <label for="caption">Caption</label>
@@ -29,7 +70,7 @@
     <p class="form-error" id="up-error"></p>
     <p class="muted" id="up-status"></p>
     <button class="btn btn-green btn-block" id="upload" type="button" style="margin-top:10px;">Post to VIRALX</button>
-    <p class="muted" style="font-size:13px;">Free tier: keep clips short (under ~50 MB). Editing tools (trim, filters, text) arrive with Creator Studio in Phase 3.</p>
+    <p class="muted" style="font-size:13px;">Free tier: keep clips short (under ~50 MB). Want to cut it first? Open the <a href="editor.html">Creator Studio</a>.</p>
   </div>
 </main>
 

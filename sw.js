@@ -1,8 +1,10 @@
 // VIRALX service worker — network-first, offline fallback to cache.
-const CACHE = "viralx-v1";
+const CACHE = "viralx-v3";
 const SHELL = [
   "./", "./index.html", "./discover.html", "./create.html", "./live.html", "./profile.html", "./auth.html",
-  "./css/vyralx.css", "./js/config.js", "./js/app.js", "./js/auth.js", "./js/banner-data.js", "./js/live.js",
+  "./studio.html", "./chat.html", "./editor.html",
+  "./css/viralx.css", "./js/config.js", "./js/app.js", "./js/auth.js", "./js/banner-data.js", "./js/live.js",
+  "./js/livepeer.js", "./js/studio.js", "./js/vxchat.js",
   "./manifest.webmanifest", "./icon.svg"
 ];
 self.addEventListener("install", (e) => {
