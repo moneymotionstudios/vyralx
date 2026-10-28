@@ -47,6 +47,26 @@
     }
   ];
 
+  // Sample comment threads for the two DEMO clips. Demo content only —
+  // real uploads use the live comments table. Posting here stays on-device.
+  var DEMO_THREADS = {
+    "seed-1": [
+      { user: "bdboss", body: "This dragon goes crazy 🐉🔥", when: "2h" },
+      { user: "babysal198", body: "Brooklyn stand up!!", when: "5h" },
+      { user: "keyz87", body: "Made this one with AI — more coming 👀", when: "5h" },
+      { user: "bdboss", body: "The chrome on it is clean", when: "1h" },
+      { user: "babysal198", body: "Need this as a music video intro", when: "44m" }
+    ],
+    "seed-2": [
+      { user: "babysal198", body: "That zone render still 🔥", when: "3h" },
+      { user: "bdboss", body: "From the block to the booth fr", when: "2h" },
+      { user: "keyz87", body: "Cheap Zone did its thing on this one", when: "2h" },
+      { user: "babysal198", body: "Run it back 🎬", when: "1h" }
+    ]
+  };
+  // demo counts = the real number of sample comments, not invented totals
+  SEED.forEach(function (v) { if (DEMO_THREADS[v.id]) v.comments = DEMO_THREADS[v.id].length; });
+
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -135,7 +155,46 @@
     list.innerHTML = "";
     formWrap.innerHTML = "";
     if (!v.uuid || !sb) {
-      list.innerHTML = '<div class="vx-c-empty">This is a demo clip — comments open on real uploads. Post yours and join the feed!</div>';
+      // DEMO clip: show its sample thread; posts stay local to this session
+      var thread = (DEMO_THREADS[v.id] || []).slice();
+      list.innerHTML = '<div class="vx-c-demo-note">Demo clip — sample comments. Real uploads get live comments from everyone.</div>';
+      function drawDemo() {
+        list.querySelectorAll(".vx-c-row").forEach(function (r) { r.remove(); });
+        thread.forEach(function (c, idx) {
+          var row = document.createElement("div");
+          row.className = "vx-c-row";
+          row.innerHTML =
+            '<div class="vx-c-avatar">' + esc(c.user.charAt(0).toUpperCase()) + "</div>" +
+            '<div class="vx-c-main"><div class="vx-c-meta">@' + esc(c.user) + " <span>" + esc(c.when) + "</span></div>" +
+            '<div class="vx-c-body">' + esc(c.body) + "</div></div>" +
+            (c.mine ? '<button class="vx-c-del" type="button" title="Delete your comment">✕</button>' : "");
+          if (c.mine) row.querySelector(".vx-c-del").addEventListener("click", function () {
+            thread.splice(idx, 1); v.comments = thread.length;
+            var sp = wrap.querySelector(".comment-count"); if (sp) sp.textContent = v.comments;
+            cPanel.querySelector(".vx-c-title").textContent = "Comments · " + v.comments;
+            drawDemo();
+          });
+          list.appendChild(row);
+        });
+        list.scrollTop = list.scrollHeight;
+      }
+      drawDemo();
+      formWrap.innerHTML =
+        '<form class="vx-c-form"><input type="text" maxlength="500" placeholder="Add a comment…" autocomplete="off">' +
+        '<button type="submit">Post</button></form>';
+      var dForm = formWrap.querySelector("form");
+      var dInput = dForm.querySelector("input");
+      dForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var body = dInput.value.trim();
+        if (!body) return;
+        thread.push({ user: "you", body: body, when: "now", mine: true });
+        v.comments = thread.length;
+        var sp = wrap.querySelector(".comment-count"); if (sp) sp.textContent = v.comments;
+        cPanel.querySelector(".vx-c-title").textContent = "Comments · " + v.comments;
+        dInput.value = "";
+        drawDemo();
+      });
       return;
     }
     list.innerHTML = '<div class="vx-c-empty">Loading comments…</div>';
@@ -332,7 +391,7 @@
       }
       var res = await q;
       if (!res.error && res.data && res.data.length) {
-        videos = res.data.map(function (r) {
+        var realMapped = res.data.map(function (r) {
           return {
             uuid: r.id, username: (r.profiles && r.profiles.username) || "creator",
             verified: !!(r.profiles && r.profiles.verified), caption: r.caption || "",
@@ -340,6 +399,7 @@
             comments: r.comment_count || 0, category: r.category, myLike: false
           };
         });
+        videos = realMapped;
         // my likes, so hearts light up correctly
         if (ME) {
           var mine = await sb.from("likes").select("video_id").eq("user_id", ME.id)
@@ -350,6 +410,12 @@
             videos.forEach(function (x) { x.myLike = !!set[x.uuid]; });
           }
         }
+        // demo clips ride along after the real uploads (category tabs filter them)
+        var seedForTab = SEED;
+        if (category && ["music", "gaming", "entertainment"].indexOf(category) >= 0) {
+          seedForTab = SEED.filter(function (v) { return v.category === category; });
+        }
+        videos = videos.concat(seedForTab);
       }
     } else if (category && category !== "foryou") {
       videos = SEED.filter(function (v) { return v.category === category; });

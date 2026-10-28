@@ -405,3 +405,4 @@ main{transition:transform .05s linear}
   @keyframes vxcin{from{transform:translateX(5%)}to{transform:translateX(0)}}
   .vx-toast{bottom:36px}
 }
+.vx-c-demo-note{color:var(--vx-muted);font-size:12.5px;text-align:center;padding:10px 6px 2px;line-height:1.45}
