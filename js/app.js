@@ -1,4 +1,4 @@
-// VIRALX — shared app logic: splash, feed rendering, likes, backend wiring.
+// VIRALX — shared app logic: splash, feed rendering, likes, comments, shares.
 // Backend: Supabase (project "vyralx"). Falls back to DEMO seed content until
 // js/config.js carries the project URL + publishable key.
 (function () {
@@ -7,6 +7,7 @@
   var sb = null;
   if (LIVE && window.supabase) sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
   window.VX = { sb: sb, live: LIVE, cfg: cfg };
+  var ME = null; // signed-in user (or null), resolved on each feed render
 
   // ---- splash ----
   window.addEventListener("load", function () {
@@ -51,10 +52,153 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  function timeAgo(ts) {
+    var sec = Math.max(1, (Date.now() - new Date(ts).getTime()) / 1000);
+    if (sec < 60) return "now";
+    if (sec < 3600) return Math.floor(sec / 60) + "m";
+    if (sec < 86400) return Math.floor(sec / 3600) + "h";
+    if (sec < 604800) return Math.floor(sec / 86400) + "d";
+    return Math.floor(sec / 604800) + "w";
+  }
+  var toastEl = null;
+  function toast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement("div");
+      toastEl.className = "vx-toast";
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(function () { toastEl.classList.remove("show"); }, 2200);
+  }
 
+  // ================= COMMENTS =================
+  var cPanel = null, cCurrent = null; // cCurrent = { v, wrap }
+  function buildCommentsPanel() {
+    if (cPanel) return cPanel;
+    var root = document.createElement("div");
+    root.className = "vx-comments-root hidden";
+    root.innerHTML =
+      '<div class="vx-c-overlay"></div>' +
+      '<aside class="vx-c-panel" role="dialog" aria-label="Comments">' +
+        '<div class="vx-c-head"><span class="vx-c-title">Comments</span><button class="vx-c-close" type="button" aria-label="Close">✕</button></div>' +
+        '<div class="vx-c-list"></div>' +
+        '<div class="vx-c-formwrap"></div>' +
+      "</aside>";
+    document.body.appendChild(root);
+    root.querySelector(".vx-c-overlay").addEventListener("click", closeComments);
+    root.querySelector(".vx-c-close").addEventListener("click", closeComments);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeComments(); });
+    cPanel = root;
+    return root;
+  }
+  function closeComments() { if (cPanel) cPanel.classList.add("hidden"); cCurrent = null; }
+  function commentRow(c) {
+    var mine = ME && c.user_id === ME.id;
+    var name = (c.profiles && c.profiles.username) || "user";
+    var av = (c.profiles && c.profiles.avatar_url)
+      ? '<img src="' + esc(c.profiles.avatar_url) + '" alt="">'
+      : esc(name.charAt(0).toUpperCase());
+    var row = document.createElement("div");
+    row.className = "vx-c-row";
+    row.innerHTML =
+      '<div class="vx-c-avatar">' + av + "</div>" +
+      '<div class="vx-c-main"><div class="vx-c-meta">@' + esc(name) + ' <span>' + timeAgo(c.created_at) + "</span></div>" +
+      '<div class="vx-c-body">' + esc(c.body) + "</div></div>" +
+      (mine ? '<button class="vx-c-del" type="button" title="Delete your comment">✕</button>' : "");
+    if (mine) {
+      row.querySelector(".vx-c-del").addEventListener("click", async function () {
+        var del = await sb.from("comments").delete().eq("id", c.id).eq("user_id", ME.id);
+        if (del.error) { toast("Could not delete — try again"); return; }
+        row.remove();
+        bumpCommentCount(-1);
+      });
+    }
+    return row;
+  }
+  function bumpCommentCount(delta) {
+    if (!cCurrent) return;
+    cCurrent.v.comments = Math.max(0, (cCurrent.v.comments || 0) + delta);
+    var span = cCurrent.wrap.querySelector(".comment-count");
+    if (span) span.textContent = cCurrent.v.comments;
+    var title = cPanel.querySelector(".vx-c-title");
+    if (title) title.textContent = "Comments · " + cCurrent.v.comments;
+  }
+  async function openComments(v, wrap) {
+    buildCommentsPanel();
+    cCurrent = { v: v, wrap: wrap };
+    cPanel.classList.remove("hidden");
+    var list = cPanel.querySelector(".vx-c-list");
+    var formWrap = cPanel.querySelector(".vx-c-formwrap");
+    cPanel.querySelector(".vx-c-title").textContent = "Comments · " + (v.comments || 0);
+    list.innerHTML = "";
+    formWrap.innerHTML = "";
+    if (!v.uuid || !sb) {
+      list.innerHTML = '<div class="vx-c-empty">This is a demo clip — comments open on real uploads. Post yours and join the feed!</div>';
+      return;
+    }
+    list.innerHTML = '<div class="vx-c-empty">Loading comments…</div>';
+    var res = await sb.from("comments")
+      .select("id,user_id,body,created_at,profiles(username,avatar_url)")
+      .eq("video_id", v.uuid).order("created_at", { ascending: true }).limit(300);
+    if (!cCurrent || cCurrent.v !== v) return; // panel moved on
+    list.innerHTML = "";
+    if (res.error) {
+      list.innerHTML = '<div class="vx-c-empty">Comments could not load right now.</div>';
+    } else if (!res.data.length) {
+      list.innerHTML = '<div class="vx-c-empty">No comments yet — be the first. 🔥</div>';
+    } else {
+      res.data.forEach(function (c) { list.appendChild(commentRow(c)); });
+      list.scrollTop = list.scrollHeight;
+    }
+    if (!ME) {
+      formWrap.innerHTML = '<a class="vx-c-signin" href="auth.html">Sign in to comment</a>';
+      return;
+    }
+    formWrap.innerHTML =
+      '<form class="vx-c-form"><input type="text" maxlength="500" placeholder="Add a comment…" autocomplete="off">' +
+      '<button type="submit">Post</button></form>';
+    var form = formWrap.querySelector("form");
+    var input = form.querySelector("input");
+    input.focus();
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var body = input.value.trim();
+      if (!body) return;
+      var btn = form.querySelector("button");
+      btn.disabled = true;
+      var ins = await sb.from("comments").insert({ user_id: ME.id, video_id: v.uuid, body: body })
+        .select("id,user_id,body,created_at,profiles(username,avatar_url)").single();
+      btn.disabled = false;
+      if (ins.error || !ins.data) { toast("Comment failed — try again"); return; }
+      var empty = list.querySelector(".vx-c-empty");
+      if (empty) empty.remove();
+      list.appendChild(commentRow(ins.data));
+      list.scrollTop = list.scrollHeight;
+      input.value = "";
+      bumpCommentCount(1);
+    });
+  }
+
+  // ================= SHARE =================
+  function shareVideo(v) {
+    var url = location.origin + location.pathname + (v.uuid ? "?v=" + v.uuid : "");
+    var text = (v.caption || "Watch this on VIRALX").slice(0, 90);
+    if (navigator.share) {
+      navigator.share({ title: "VIRALX", text: text, url: url }).catch(function () {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function () { toast("Link copied — share it anywhere 🔗"); });
+    } else {
+      toast(url);
+    }
+  }
+
+  // ================= POSTS =================
   function postEl(v) {
     var wrap = document.createElement("section");
     wrap.className = "post";
+    wrap.dataset.vid = v.uuid || v.id || "";
     var initial = esc((v.username || "?").charAt(0).toUpperCase());
     wrap.innerHTML =
       '<video src="' + esc(v.video_url) + '" loop playsinline muted preload="metadata"></video>' +
@@ -62,7 +206,7 @@
       '<div class="rail">' +
         '<div class="avatar">' + initial + "</div>" +
         '<button class="like-btn"><span class="bubble">▲</span><span class="like-count">' + (v.likes || 0) + "</span></button>" +
-        '<button class="comment-btn"><span class="bubble">💬</span><span>' + (v.comments || 0) + "</span></button>" +
+        '<button class="comment-btn"><span class="bubble">💬</span><span class="comment-count">' + (v.comments || 0) + "</span></button>" +
         '<button class="save-btn"><span class="bubble">🔖</span><span>Save</span></button>' +
         '<button class="share-btn"><span class="bubble">↗</span><span>Share</span></button>' +
       "</div>" +
@@ -75,21 +219,42 @@
     video.addEventListener("click", function () {
       if (video.paused) { video.muted = false; video.play(); } else { video.pause(); }
     });
+
+    // ---- like (real, persisted) ----
     var likeBtn = wrap.querySelector(".like-btn");
-    var liked = false;
-    likeBtn.addEventListener("click", function () {
-      liked = !liked;
-      likeBtn.classList.toggle("liked", liked);
-      likeBtn.querySelector(".like-count").textContent = (v.likes || 0) + (liked ? 1 : 0);
-      if (LIVE && sb && v.uuid) {
-        // real like wiring lands with auth session (Phase 2 completion)
+    var likeCountEl = likeBtn.querySelector(".like-count");
+    var liked = !!v.myLike;
+    var likeBusy = false;
+    if (liked) likeBtn.classList.add("liked");
+    likeBtn.addEventListener("click", async function () {
+      if (!v.uuid || !sb) { // demo clip: local toggle only
+        liked = !liked;
+        likeBtn.classList.toggle("liked", liked);
+        likeCountEl.textContent = (v.likes || 0) + (liked ? 1 : 0);
+        return;
       }
+      if (!ME) { location.href = "auth.html"; return; }
+      if (likeBusy) return;
+      likeBusy = true;
+      if (liked) {
+        var del = await sb.from("likes").delete().eq("user_id", ME.id).eq("video_id", v.uuid);
+        if (!del.error) { liked = false; v.likes = Math.max(0, (v.likes || 0) - 1); }
+      } else {
+        var ins = await sb.from("likes").insert({ user_id: ME.id, video_id: v.uuid });
+        if (!ins.error) { liked = true; v.likes = (v.likes || 0) + 1; }
+      }
+      likeBusy = false;
+      likeBtn.classList.toggle("liked", liked);
+      likeCountEl.textContent = v.likes;
     });
-    wrap.querySelector(".share-btn").addEventListener("click", function () {
-      var url = location.href;
-      if (navigator.share) navigator.share({ title: "VIRALX", url: url }).catch(function () {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(url);
-    });
+
+    // ---- comments ----
+    wrap.querySelector(".comment-btn").addEventListener("click", function () { openComments(v, wrap); });
+
+    // ---- share (per-video link) ----
+    wrap.querySelector(".share-btn").addEventListener("click", function () { shareVideo(v); });
+
+    // ---- save (bookmarks, real) ----
     var saveBtn = wrap.querySelector(".save-btn");
     var savedState = false;
     saveBtn.addEventListener("click", async function () {
@@ -114,7 +279,6 @@
         label.textContent = "Save";
       }
     });
-    // reflect an existing bookmark
     if (LIVE && sb && v.uuid) {
       sb.auth.getUser().then(async function (r) {
         var u = r.data.user; if (!u) return;
@@ -146,11 +310,26 @@
     var feed = document.getElementById("feed");
     if (!feed) return;
     feed.innerHTML = "";
+    ME = null;
+    if (LIVE && sb) {
+      var sess = await sb.auth.getSession();
+      ME = (sess.data && sess.data.session) ? sess.data.session.user : null;
+    }
     var videos = SEED;
     if (LIVE && sb) {
       var q = sb.from("videos").select("id,user_id,caption,hashtags,video_url,category,like_count,comment_count,created_at,profiles(username,verified)")
-        .eq("status", "active").order("created_at", { ascending: false }).limit(30);
-      if (category && category !== "foryou") q = q.eq("category", category);
+        .eq("status", "active").limit(30);
+      if (category === "trending") {
+        q = q.order("like_count", { ascending: false });
+      } else if (category === "following" && ME) {
+        var fol = await sb.from("follows").select("followee_id").eq("follower_id", ME.id);
+        var ids = (fol.data || []).map(function (f) { return f.followee_id; });
+        if (ids.length) q = q.in("user_id", ids);
+        q = q.order("created_at", { ascending: false });
+      } else {
+        q = q.order("created_at", { ascending: false });
+        if (category && category !== "foryou" && category !== "following") q = q.eq("category", category);
+      }
       var res = await q;
       if (!res.error && res.data && res.data.length) {
         videos = res.data.map(function (r) {
@@ -158,9 +337,19 @@
             uuid: r.id, username: (r.profiles && r.profiles.username) || "creator",
             verified: !!(r.profiles && r.profiles.verified), caption: r.caption || "",
             tags: r.hashtags || [], video_url: r.video_url, likes: r.like_count || 0,
-            comments: r.comment_count || 0, category: r.category
+            comments: r.comment_count || 0, category: r.category, myLike: false
           };
         });
+        // my likes, so hearts light up correctly
+        if (ME) {
+          var mine = await sb.from("likes").select("video_id").eq("user_id", ME.id)
+            .in("video_id", videos.map(function (x) { return x.uuid; }));
+          if (!mine.error && mine.data) {
+            var set = {};
+            mine.data.forEach(function (l) { set[l.video_id] = true; });
+            videos.forEach(function (x) { x.myLike = !!set[x.uuid]; });
+          }
+        }
       }
     } else if (category && category !== "foryou") {
       videos = SEED.filter(function (v) { return v.category === category; });
@@ -168,11 +357,18 @@
     }
     videos.forEach(function (v) { feed.appendChild(postEl(v)); });
     watchFeed(feed);
+    // shared-link deep jump: ?v=<video id>
+    var want = new URLSearchParams(location.search).get("v");
+    if (want) {
+      var target = feed.querySelector('[data-vid="' + want + '"]');
+      if (target) setTimeout(function () { target.scrollIntoView(); }, 60);
+    }
   };
 
   // feed tabs
   document.querySelectorAll(".feed-tabs button").forEach(function (b) {
     b.addEventListener("click", function () {
+      if (b.getAttribute("data-cat") === "live") { location.href = "live.html"; return; }
       document.querySelectorAll(".feed-tabs button").forEach(function (x) { x.classList.remove("active"); });
       b.classList.add("active");
       window.VX_renderFeed(b.getAttribute("data-cat"));

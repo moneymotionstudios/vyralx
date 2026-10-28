@@ -1,5 +1,5 @@
 // VIRALX service worker — network-first, offline fallback to cache.
-const CACHE = "viralx-v11";
+const CACHE = "viralx-v12";
 const SHELL = [
   "./", "./index.html", "./discover.html", "./create.html", "./live.html", "./profile.html", "./auth.html",
   "./studio.html", "./chat.html", "./editor.html", "./pro.html", "./download.html",
