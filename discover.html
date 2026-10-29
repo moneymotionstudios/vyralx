@@ -46,18 +46,46 @@ document.getElementById("search-form").addEventListener("submit", async function
   if (!q) return;
   var sb = window.VX && window.VX.sb;
   if (!sb) { err.textContent = "Search goes live with the backend — try the feed tabs meanwhile."; return; }
+  var clean = q.replace(/[%_]/g, "");
+  // creators first (plain queries only — profiles embeds into videos error
+  // out on this schema with "more than one relationship")
+  var pr = await sb.from("profiles")
+    .select("id,username,display_name")
+    .or("username.ilike.%" + clean + "%,display_name.ilike.%" + clean + "%")
+    .limit(10);
+  if (pr.data && pr.data.length) {
+    var h = document.createElement("h3"); h.textContent = "Creators"; out.appendChild(h);
+    pr.data.forEach(function (p) {
+      var d = document.createElement("div");
+      d.className = "card";
+      d.innerHTML = "<b>@" + p.username + "</b>" +
+        '<p class="muted">' + (p.display_name || "") + '</p>' +
+        '<a class="btn" href="index.html">View the feed</a>';
+      out.appendChild(d);
+    });
+  }
   var res = await sb.from("videos")
-    .select("id,caption,video_url,like_count,profiles(username)")
+    .select("id,user_id,caption,video_url,like_count")
     .eq("status", "active")
-    .or("caption.ilike.%" + q.replace(/[%_]/g, "") + "%,hashtags.cs.{" + (q.startsWith("#") ? q : "#" + q) + "}")
+    .or("caption.ilike.%" + clean + "%,hashtags.cs.{" + (q.startsWith("#") ? q : "#" + q) + "}")
     .order("created_at", { ascending: false }).limit(20);
   if (res.error) { err.textContent = res.error.message; return; }
-  if (!res.data.length) { out.innerHTML = '<p class="muted center">No matches yet.</p>'; return; }
+  var names = {};
+  if (res.data.length) {
+    var ids = [];
+    res.data.forEach(function (v) { if (ids.indexOf(v.user_id) < 0) ids.push(v.user_id); });
+    var who = await sb.from("profiles").select("id,username").in("id", ids);
+    if (who.data) who.data.forEach(function (p) { names[p.id] = p.username; });
+  }
+  if (!res.data.length && !(pr.data && pr.data.length)) { out.innerHTML = '<p class="muted center">No matches yet.</p>'; return; }
+  if (res.data.length) {
+    var h2 = document.createElement("h3"); h2.textContent = "Videos"; out.appendChild(h2);
+  }
   res.data.forEach(function (v) {
     var d = document.createElement("div");
     d.className = "card";
-    d.innerHTML = "<b>@" + (v.profiles ? v.profiles.username : "creator") + "</b>" +
-      '<video src="' + v.video_url + '" preload="metadata" muted playsinline controls style="width:100%;border-radius:10px;margin-top:8px;"></video>' +
+    d.innerHTML = "<b>@" + (names[v.user_id] || "creator") + "</b>" +
+      '<a href="index.html?v=' + v.id + '"><video src="' + v.video_url + '" preload="metadata" muted playsinline style="width:100%;border-radius:10px;margin-top:8px;"></video></a>' +
       '<p class="muted">' + (v.caption || "") + " · ▲ " + (v.like_count || 0) + "</p>";
     out.appendChild(d);
   });

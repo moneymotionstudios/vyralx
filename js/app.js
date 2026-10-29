@@ -137,6 +137,19 @@
     }
     return row;
   }
+  // Attach profile info to rows WITHOUT a PostgREST embed — embeds of
+  // profiles into videos/comments are ambiguous in this schema ("more than
+  // one relationship") and error out, which is what hid all real content.
+  async function attachProfiles(rows) {
+    var ids = [];
+    rows.forEach(function (r) { if (r.user_id && ids.indexOf(r.user_id) < 0) ids.push(r.user_id); });
+    if (!ids.length) return;
+    var pr = await sb.from("profiles").select("id,username,avatar_url,verified").in("id", ids);
+    if (pr.error || !pr.data) return;
+    var map = {};
+    pr.data.forEach(function (p) { map[p.id] = p; });
+    rows.forEach(function (r) { r.profiles = map[r.user_id] || null; });
+  }
   function bumpCommentCount(delta) {
     if (!cCurrent) return;
     cCurrent.v.comments = Math.max(0, (cCurrent.v.comments || 0) + delta);
@@ -199,8 +212,9 @@
     }
     list.innerHTML = '<div class="vx-c-empty">Loading comments…</div>';
     var res = await sb.from("comments")
-      .select("id,user_id,body,created_at,profiles(username,avatar_url)")
+      .select("id,user_id,body,created_at")
       .eq("video_id", v.uuid).order("created_at", { ascending: true }).limit(300);
+    if (res.data && res.data.length) await attachProfiles(res.data);
     if (!cCurrent || cCurrent.v !== v) return; // panel moved on
     list.innerHTML = "";
     if (res.error) {
@@ -228,9 +242,10 @@
       var btn = form.querySelector("button");
       btn.disabled = true;
       var ins = await sb.from("comments").insert({ user_id: ME.id, video_id: v.uuid, body: body })
-        .select("id,user_id,body,created_at,profiles(username,avatar_url)").single();
+        .select("id,user_id,body,created_at").single();
       btn.disabled = false;
       if (ins.error || !ins.data) { toast("Comment failed — try again"); return; }
+      await attachProfiles([ins.data]);
       var empty = list.querySelector(".vx-c-empty");
       if (empty) empty.remove();
       list.appendChild(commentRow(ins.data));
@@ -263,7 +278,9 @@
       '<video src="' + esc(v.video_url) + '" loop playsinline muted preload="metadata"></video>' +
       '<div class="shade"></div>' +
       '<div class="rail">' +
-        '<div class="avatar">' + initial + "</div>" +
+        '<div class="avatar-wrap"><div class="avatar">' + initial + "</div>" +
+        ((v.uuid && v.owner && (!ME || ME.id !== v.owner)) ? '<button class="follow-btn" type="button" aria-label="Follow creator">+</button>' : "") +
+        "</div>" +
         '<button class="like-btn"><span class="bubble">▲</span><span class="like-count">' + (v.likes || 0) + "</span></button>" +
         '<button class="comment-btn"><span class="bubble">💬</span><span class="comment-count">' + (v.comments || 0) + "</span></button>" +
         '<button class="save-btn"><span class="bubble">🔖</span><span>Save</span></button>' +
@@ -275,6 +292,14 @@
       "</div>";
 
     var video = wrap.querySelector("video");
+    video.addEventListener("error", function () {
+      if (wrap.classList.contains("dead")) return;
+      wrap.classList.add("dead");
+      var note = document.createElement("div");
+      note.className = "vx-dead-note";
+      note.textContent = "⚠ Video unavailable";
+      wrap.appendChild(note);
+    });
     video.addEventListener("click", function () {
       if (video.paused) { video.muted = false; video.play(); } else { video.pause(); }
     });
@@ -349,6 +374,33 @@
         }
       }).catch(function () {});
     }
+
+    // ---- follow (real, persisted) ----
+    var followBtn = wrap.querySelector(".follow-btn");
+    if (followBtn && v.uuid && v.owner) {
+      var following = !!v.myFollow;
+      var folBusy = false;
+      function drawFollow() {
+        followBtn.textContent = following ? "✓" : "+";
+        followBtn.classList.toggle("following", following);
+      }
+      drawFollow();
+      followBtn.addEventListener("click", async function () {
+        if (!ME) { location.href = "auth.html"; return; }
+        if (folBusy) return;
+        folBusy = true;
+        if (following) {
+          var delF = await sb.from("follows").delete().eq("follower_id", ME.id).eq("following_id", v.owner);
+          if (!delF.error) following = false;
+        } else {
+          var insF = await sb.from("follows").insert({ follower_id: ME.id, following_id: v.owner });
+          if (!insF.error) following = true;
+        }
+        folBusy = false;
+        v.myFollow = following;
+        drawFollow();
+      });
+    }
     return wrap;
   }
 
@@ -376,27 +428,39 @@
     }
     var videos = SEED;
     if (LIVE && sb) {
-      var q = sb.from("videos").select("id,user_id,caption,hashtags,video_url,category,like_count,comment_count,created_at,profiles(username,verified)")
+      var q = sb.from("videos").select("id,user_id,caption,hashtags,video_url,category,like_count,comment_count,created_at")
         .eq("status", "active").limit(30);
+      var followingEmpty = false;
       if (category === "trending") {
         q = q.order("like_count", { ascending: false });
-      } else if (category === "following" && ME) {
-        var fol = await sb.from("follows").select("followee_id").eq("follower_id", ME.id);
-        var ids = (fol.data || []).map(function (f) { return f.followee_id; });
-        if (ids.length) q = q.in("user_id", ids);
+      } else if (category === "following") {
+        if (!ME) {
+          followingEmpty = true;
+        } else {
+          var fol = await sb.from("follows").select("following_id").eq("follower_id", ME.id);
+          var ids = (fol.data || []).map(function (f) { return f.following_id; });
+          if (ids.length) q = q.in("user_id", ids); else followingEmpty = true;
+        }
         q = q.order("created_at", { ascending: false });
       } else {
         q = q.order("created_at", { ascending: false });
         if (category && category !== "foryou" && category !== "following") q = q.eq("category", category);
       }
       var res = await q;
-      if (!res.error && res.data && res.data.length) {
-        var realMapped = res.data.map(function (r) {
+      if (followingEmpty) {
+        feed.innerHTML = '<div class="vx-empty-note">' + (ME ? "Follow creators and their videos will land here.<br>Tap + on any video to follow its creator." : "Sign in and follow creators to build this feed.") + "</div>";
+        videos = [];
+      } else if (!res.error && res.data && res.data.length) {
+        await attachProfiles(res.data);
+        var realMapped = res.data.filter(function (r) {
+          // legacy AI clips point at temporary tunnel URLs that die within hours — never render those
+          return (r.video_url || "").indexOf("lhr.life") < 0;
+        }).map(function (r) {
           return {
-            uuid: r.id, username: (r.profiles && r.profiles.username) || "creator",
+            uuid: r.id, owner: r.user_id, username: (r.profiles && r.profiles.username) || "creator",
             verified: !!(r.profiles && r.profiles.verified), caption: r.caption || "",
             tags: r.hashtags || [], video_url: r.video_url, likes: r.like_count || 0,
-            comments: r.comment_count || 0, category: r.category, myLike: false
+            comments: r.comment_count || 0, category: r.category, myLike: false, myFollow: false
           };
         });
         videos = realMapped;
@@ -410,12 +474,23 @@
             videos.forEach(function (x) { x.myLike = !!set[x.uuid]; });
           }
         }
-        // demo clips ride along after the real uploads (category tabs filter them)
+        // my follows, so follow buttons light up correctly
+        if (ME) {
+          var myf = await sb.from("follows").select("following_id").eq("follower_id", ME.id)
+            .in("following_id", videos.map(function (x) { return x.owner; }));
+          if (!myf.error && myf.data) {
+            var fset = {};
+            myf.data.forEach(function (f) { fset[f.following_id] = true; });
+            videos.forEach(function (x) { x.myFollow = !!fset[x.owner]; });
+          }
+        }
+        // demo clips ride along after the real uploads (category tabs filter them);
+        // never on Following/Trending, which must stay true to real data
         var seedForTab = SEED;
         if (category && ["music", "gaming", "entertainment"].indexOf(category) >= 0) {
           seedForTab = SEED.filter(function (v) { return v.category === category; });
         }
-        videos = videos.concat(seedForTab);
+        if (category !== "following" && category !== "trending") videos = videos.concat(seedForTab);
       }
     } else if (category && category !== "foryou") {
       videos = SEED.filter(function (v) { return v.category === category; });

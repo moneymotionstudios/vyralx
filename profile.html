@@ -31,6 +31,13 @@
     <a class="btn btn-green btn-block" href="auth.html">Sign in / Create account</a>
   </div>
   <div id="signed-in" class="hidden">
+    <button class="btn btn-block" id="edit-toggle" type="button" style="margin-bottom:8px;">✏️ Edit profile</button>
+    <div id="edit-form" class="hidden" style="margin-bottom:10px;">
+      <input id="e-name" type="text" maxlength="40" placeholder="Display name" style="width:100%;margin-bottom:8px;">
+      <input id="e-bio" type="text" maxlength="150" placeholder="Bio" style="width:100%;margin-bottom:8px;">
+      <button class="btn btn-green btn-block" id="edit-save" type="button">Save profile</button>
+      <p class="form-error" id="e-error"></p>
+    </div>
     <button class="btn btn-block" id="sign-out" type="button">Sign out</button>
   </div>
 
@@ -87,7 +94,7 @@
     var grid = document.getElementById("p-grid");
     grid.innerHTML = "";
     vids.data.forEach(function (v) {
-      var c = document.createElement("div"); c.className = "cell";
+      var c = document.createElement("a"); c.className = "cell"; c.href = "index.html?v=" + v.id;
       c.innerHTML = '<video src="' + v.video_url + '" preload="metadata" muted playsinline></video>';
       grid.appendChild(c);
     });
@@ -98,6 +105,27 @@
     await sb.auth.signOut();
     location.reload();
   });
+  var editToggle = document.getElementById("edit-toggle");
+  if (editToggle && pr.data) {
+    document.getElementById("e-name").value = pr.data.display_name || "";
+    document.getElementById("e-bio").value = pr.data.bio || "";
+    editToggle.addEventListener("click", function () {
+      document.getElementById("edit-form").classList.toggle("hidden");
+    });
+    document.getElementById("edit-save").addEventListener("click", async function () {
+      var eErr = document.getElementById("e-error");
+      eErr.textContent = "";
+      var name = document.getElementById("e-name").value.trim();
+      var bio = document.getElementById("e-bio").value.trim();
+      var upd = await sb.from("profiles").update({ display_name: name || pr.data.username, bio: bio }).eq("id", u.id);
+      if (upd.error) { eErr.textContent = "Could not save — try again."; return; }
+      document.getElementById("p-name").textContent = (name || pr.data.username) + (pr.data.is_pro ? " ⭐PRO" : "");
+      document.getElementById("p-bio").textContent = bio;
+      document.getElementById("edit-form").classList.add("hidden");
+      editToggle.textContent = "✓ Saved";
+      setTimeout(function () { editToggle.textContent = "✏️ Edit profile"; }, 1800);
+    });
+  }
 })();
 </script>
 <script src="js/fx.js"></script>
