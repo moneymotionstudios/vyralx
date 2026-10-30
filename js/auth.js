@@ -58,6 +58,20 @@
     }
   }
 
+  // Show/hide password toggles
+  function wireShow(id, input) {
+    var el = document.getElementById(id);
+    if (!el || !input) return;
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      var show = input.type === "password";
+      input.type = show ? "text" : "password";
+      el.textContent = show ? "🙈 Hide password" : "👁 Show password";
+    });
+  }
+  wireShow("show-pw", pwInput);
+  wireShow("show-pw2", pw2Input);
+
   document.getElementById("auth-toggle").addEventListener("click", function (e) {
     e.preventDefault();
     setMode(mode === "signup" ? "signin" : "signup");
