@@ -5,7 +5,11 @@
   var cfg = window.VX_CONFIG || {};
   var LIVE = !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY);
   var sb = null;
-  if (LIVE && window.supabase) sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+  // Sessions persist until the USER signs out — never auto-sign-out:
+  // persistSession keeps the login on the device, autoRefreshToken renews it silently.
+  if (LIVE && window.supabase) sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
   window.VX = { sb: sb, live: LIVE, cfg: cfg };
   var ME = null; // signed-in user (or null), resolved on each feed render
 
