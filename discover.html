@@ -20,8 +20,20 @@
   <p class="form-error" id="s-error"></p>
   <div id="results"></div>
   <div class="card">
-    <h3 style="margin-top:0;">🎵 Sounds</h3>
-    <div id="sounds-list"></div>
+    <h3 style="margin-top:0;">🎵 Music Search — every platform</h3>
+    <p class="muted">Search any song, artist or beat across the free music platforms:</p>
+    <input id="mq" type="search" placeholder="Search any song, artist, beat…">
+    <p class="form-error" id="m-error"></p>
+    <div id="music-platforms" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+      <button class="btn" type="button" data-mq="youtube">▶️ YouTube</button>
+      <button class="btn" type="button" data-mq="ytmusic">🎧 YouTube Music</button>
+      <button class="btn" type="button" data-mq="spotify">🟢 Spotify</button>
+      <button class="btn" type="button" data-mq="soundcloud">🟠 SoundCloud</button>
+      <button class="btn" type="button" data-mq="apple">🍎 Apple Music</button>
+      <button class="btn" type="button" data-mq="audiomack">🔶 Audiomack</button>
+      <button class="btn" type="button" data-mq="google">🔎 Google</button>
+      <button class="btn" type="button" data-mq="yahoo">🟣 Yahoo</button>
+    </div>
   </div>
   <div class="card">
     <h3 style="margin-top:0;">Trending tags</h3>
@@ -39,17 +51,28 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
-<script src="js/sounds-data.js"></script>
 <script src="js/app.js"></script>
 <script>
-// ---- sound library strip ----
+// ---- music search: one box, every platform ----
 (function () {
-  var box = document.getElementById("sounds-list");
-  (window.VX_SOUNDS || []).forEach(function (s) {
-    var d = document.createElement("p");
-    d.style.margin = "8px 0";
-    d.innerHTML = '<a href="sound.html?sid=' + encodeURIComponent(s.id) + "&name=" + encodeURIComponent(s.name) + '">🎵 ' + s.name + '</a> <span class="muted">· ' + s.genre + "</span>";
-    box.appendChild(d);
+  var URLS = {
+    youtube: "https://www.youtube.com/results?search_query=",
+    ytmusic: "https://music.youtube.com/search?q=",
+    spotify: "https://open.spotify.com/search/",
+    soundcloud: "https://soundcloud.com/search?q=",
+    apple: "https://music.apple.com/us/search?term=",
+    audiomack: "https://audiomack.com/search?q=",
+    google: "https://www.google.com/search?q=",
+    yahoo: "https://search.yahoo.com/search?p="
+  };
+  document.getElementById("music-platforms").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mq]");
+    if (!b) return;
+    var q = document.getElementById("mq").value.trim();
+    var err = document.getElementById("m-error");
+    if (!q) { err.textContent = "Type a song, artist or beat first."; return; }
+    err.textContent = "";
+    window.open(URLS[b.getAttribute("data-mq")] + encodeURIComponent(q), "_blank", "noopener");
   });
 })();
 
