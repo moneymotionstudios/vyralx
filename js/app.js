@@ -451,7 +451,7 @@
     }
     var videos = SEED;
     if (LIVE && sb) {
-      var q = sb.from("videos").select("id,user_id,caption,hashtags,video_url,category,like_count,comment_count,created_at")
+      var q = sb.from("videos").select("id,user_id,caption,hashtags,video_url,category,like_count,comment_count,created_at,sound_name,sound_id")
         .eq("status", "active").limit(30);
       var followingEmpty = false;
       if (category === "trending") {
