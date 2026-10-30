@@ -81,6 +81,8 @@ label{display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
 .post .meta .user .verified{color:var(--vx-green);font-size:13px}
 .post .meta .caption{font-size:14.5px;line-height:1.45;margin-top:5px;text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .post .meta .tags{color:var(--vx-green);font-weight:700}
+.post .meta .sound-line{display:inline-block;margin-top:7px;color:#E8F5E9;font-size:13.5px;font-weight:600;text-decoration:none;text-shadow:0 1px 8px rgba(0,0,0,.6);max-width:78vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.post .meta .sound-line:active{color:var(--vx-green)}
 .post .rail{position:absolute;right:10px;bottom:104px;display:flex;flex-direction:column;gap:16px;align-items:center;z-index:3}
 .rail button{
   background:none;border:0;color:#fff;display:flex;flex-direction:column;align-items:center;gap:3px;

@@ -13,6 +13,18 @@
   window.VX = { sb: sb, live: LIVE, cfg: cfg };
   var ME = null; // signed-in user (or null), resolved on each feed render
 
+  // ---- sound state: muted until the user turns sound on once; then it sticks ----
+  var SOUND_ON = false;
+  try { SOUND_ON = localStorage.getItem("vx_sound_on") === "1"; } catch (e) {}
+  function setSound(on) {
+    SOUND_ON = on;
+    window.VX_SOUND_ON = on;
+    try { localStorage.setItem("vx_sound_on", on ? "1" : "0"); } catch (e) {}
+    document.querySelectorAll("#feed video").forEach(function (v) { v.muted = !on; });
+    document.querySelectorAll("#feed .sound-btn .bubble").forEach(function (b) { b.textContent = on ? "🔊" : "🔇"; });
+  }
+  window.VX_setSound = setSound;
+
   // ---- splash ----
   window.addEventListener("load", function () {
     setTimeout(function () {
@@ -289,10 +301,12 @@
         '<button class="comment-btn"><span class="bubble">💬</span><span class="comment-count">' + (v.comments || 0) + "</span></button>" +
         '<button class="save-btn"><span class="bubble">🔖</span><span>Save</span></button>' +
         '<button class="share-btn"><span class="bubble">↗</span><span>Share</span></button>' +
+        '<button class="sound-btn"><span class="bubble">' + (SOUND_ON ? "🔊" : "🔇") + '</span><span>Sound</span></button>' +
       "</div>" +
       '<div class="meta">' +
         '<div class="user">@' + esc(v.username) + (v.verified ? ' <span class="verified">✔</span>' : "") + "</div>" +
         '<div class="caption">' + esc(v.caption) + ' <span class="tags">' + esc((v.tags || []).join(" ")) + "</span></div>" +
+        '<a class="sound-line" href="sound.html?sid=' + encodeURIComponent(v.sound_id || ("orig:" + (v.uuid || v.id || ""))) + "&name=" + encodeURIComponent(v.sound_name || ("Original sound · @" + v.username)) + '">🎵 ' + esc(v.sound_name || ("Original sound · @" + v.username)) + "</a>" +
       "</div>";
 
     var video = wrap.querySelector("video");
@@ -304,8 +318,13 @@
       note.textContent = "⚠ Video unavailable";
       wrap.appendChild(note);
     });
+    video.muted = !SOUND_ON;
     video.addEventListener("click", function () {
-      if (video.paused) { video.muted = false; video.play(); } else { video.pause(); }
+      if (video.paused) { video.muted = !SOUND_ON; video.play(); } else { video.pause(); }
+    });
+    wrap.querySelector(".sound-btn").addEventListener("click", function () {
+      setSound(!SOUND_ON);
+      if (SOUND_ON && video.paused) video.play().catch(function () {});
     });
 
     // ---- like (real, persisted) ----
@@ -414,7 +433,7 @@
       entries.forEach(function (e) {
         var vid = e.target.querySelector("video");
         if (!vid) return;
-        if (e.intersectionRatio > 0.6) { vid.play().catch(function () {}); }
+        if (e.intersectionRatio > 0.6) { vid.muted = !SOUND_ON; vid.play().catch(function () {}); }
         else { vid.pause(); }
       });
     }, { threshold: [0, 0.6, 1] });
@@ -464,7 +483,8 @@
             uuid: r.id, owner: r.user_id, username: (r.profiles && r.profiles.username) || "creator",
             verified: !!(r.profiles && r.profiles.verified), caption: r.caption || "",
             tags: r.hashtags || [], video_url: r.video_url, likes: r.like_count || 0,
-            comments: r.comment_count || 0, category: r.category, myLike: false, myFollow: false
+            comments: r.comment_count || 0, category: r.category, myLike: false, myFollow: false,
+            sound_name: r.sound_name || null, sound_id: r.sound_id || null
           };
         });
         videos = realMapped;

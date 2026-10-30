@@ -20,6 +20,10 @@
   <p class="form-error" id="s-error"></p>
   <div id="results"></div>
   <div class="card">
+    <h3 style="margin-top:0;">🎵 Sounds</h3>
+    <div id="sounds-list"></div>
+  </div>
+  <div class="card">
     <h3 style="margin-top:0;">Trending tags</h3>
     <p><a href="index.html">#viralx</a> · <a href="index.html">#brooklyn</a> · <a href="index.html">#moneymotion</a> · <a href="index.html">#studio</a></p>
   </div>
@@ -35,8 +39,21 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
+<script src="js/sounds-data.js"></script>
 <script src="js/app.js"></script>
 <script>
+// ---- sound library strip ----
+(function () {
+  var box = document.getElementById("sounds-list");
+  (window.VX_SOUNDS || []).forEach(function (s) {
+    var d = document.createElement("p");
+    d.style.margin = "8px 0";
+    d.innerHTML = '<a href="sound.html?sid=' + encodeURIComponent(s.id) + "&name=" + encodeURIComponent(s.name) + '">🎵 ' + s.name + '</a> <span class="muted">· ' + s.genre + "</span>";
+    box.appendChild(d);
+  });
+})();
+
+document.getElementById("search-form").addEventListener("submit", async function (e) {
 document.getElementById("search-form").addEventListener("submit", async function (e) {
   e.preventDefault();
   var q = document.getElementById("q").value.trim();

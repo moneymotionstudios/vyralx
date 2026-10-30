@@ -89,6 +89,11 @@
       <option value="gaming">Gaming</option>
       <option value="trending">Trending</option>
     </select>
+    <label for="sound">Sound — add music (optional)</label>
+    <select id="sound">
+      <option value="">Original sound — the video's own audio</option>
+    </select>
+    <p style="margin:6px 0 0;"><a href="#" id="sound-preview" class="muted" style="font-size:13px;">▶ Preview the sound</a></p>
     <p class="form-error" id="up-error"></p>
     <p class="muted" id="up-status"></p>
     <button class="btn btn-green btn-block" id="upload" type="button" style="margin-top:10px;">Post to VIRALX</button>
@@ -106,8 +111,38 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
+<script src="js/sounds-data.js"></script>
+<script src="js/sounds-audio.js"></script>
 <script src="js/app.js"></script>
 <script>
+// ---- sound picker: library sounds + a sound carried in from a sound page ----
+(function () {
+  var sel = document.getElementById("sound");
+  (window.VX_SOUNDS || []).forEach(function (s) {
+    var o = document.createElement("option");
+    o.value = s.id; o.textContent = "🎵 " + s.name;
+    sel.appendChild(o);
+  });
+  var wanted = new URLSearchParams(location.search).get("sound");
+  if (wanted && wanted.indexOf("orig:") === 0) {
+    var o2 = document.createElement("option");
+    o2.value = wanted; o2.textContent = "🎵 Sound from the video you tapped (original)";
+    sel.appendChild(o2); sel.value = wanted;
+  } else if (wanted) {
+    sel.value = wanted;
+  }
+  var audio = null;
+  document.getElementById("sound-preview").addEventListener("click", function (e) {
+    e.preventDefault();
+    var lib = (window.VX_SOUNDS || []).filter(function (s) { return s.id === sel.value; })[0];
+    if (!lib) { this.textContent = "▶ Pick a library sound to preview it"; return; }
+    if (audio) { audio.pause(); audio = null; this.textContent = "▶ Preview the sound"; return; }
+    audio = new Audio(window.VX_soundSrc(lib)); audio.play();
+    this.textContent = "⏸ Stop preview";
+    audio.addEventListener("ended", function () { document.getElementById("sound-preview").textContent = "▶ Preview the sound"; audio = null; });
+  });
+})();
+
 document.getElementById("upload").addEventListener("click", async function () {
   var err = document.getElementById("up-error");
   var st = document.getElementById("up-status");
@@ -121,23 +156,39 @@ document.getElementById("upload").addEventListener("click", async function () {
   if (f.size > 50 * 1024 * 1024) { err.textContent = "Free tier limit: keep it under 50 MB."; return; }
   var btn = this; btn.disabled = true; btn.textContent = "Uploading...";
   try {
-    var ext = (f.name.split(".").pop() || "mp4").toLowerCase();
+    // ---- optional sound: mix it into the video before upload ----
+    var chosen = document.getElementById("sound").value;
+    var soundName = null, soundId = null, fileToUpload = f;
+    if (chosen) {
+      var lib = (window.VX_SOUNDS || []).filter(function (s) { return s.id === chosen; })[0];
+      if (lib) { soundId = lib.id; soundName = lib.name; }
+      else if (chosen.indexOf("orig:") === 0) { soundId = chosen; soundName = "Original sound (from a VIRALX video)"; }
+      if (soundId && window.VX_MIX) {
+        st.textContent = "Adding the sound to your video (first time loads the mixer, ~30s)...";
+        try { fileToUpload = await window.VX_MIX(f, chosen, st); }
+        catch (mixErr) { st.textContent = "Sound mix didn't work — posting with the original audio."; fileToUpload = f; }
+      }
+    }
+    var ext = (fileToUpload.name.split(".").pop() || "mp4").toLowerCase();
     var path = u.id + "/" + Date.now() + "." + ext;
-    var up = await sb.storage.from("videos").upload(path, f, { contentType: f.type || "video/mp4" });
+    var up = await sb.storage.from("videos").upload(path, fileToUpload, { contentType: fileToUpload.type || "video/mp4" });
     if (up.error) throw up.error;
     var pub = sb.storage.from("videos").getPublicUrl(path).data.publicUrl;
     var tags = document.getElementById("tags").value.split(",").map(function (t) {
       t = t.trim().replace(/^#/, "");
       return t ? "#" + t : "";
     }).filter(Boolean);
-    var ins = await sb.from("videos").insert({
+    var payload = {
       user_id: u.id,
       caption: document.getElementById("caption").value.trim(),
       hashtags: tags,
       category: document.getElementById("category").value,
       video_url: pub,
       storage_path: path
-    });
+    };
+    // sound tagging turns on automatically once the sound columns exist in the DB
+    var ins = await sb.from("videos").insert(Object.assign({}, payload, { sound_name: soundName, sound_id: soundId }));
+    if (ins.error) ins = await sb.from("videos").insert(payload);
     if (ins.error) throw ins.error;
     st.textContent = "Posted ✅ Taking you to the feed...";
     setTimeout(function () { location.href = "index.html"; }, 900);
@@ -147,6 +198,53 @@ document.getElementById("upload").addEventListener("click", async function () {
     btn.disabled = false; btn.textContent = "Post to VIRALX";
   }
 });
+</script>
+<script type="module">
+// VIRALX sound mixer — bakes a chosen sound into the video with FFmpeg.wasm.
+// Library sound: looped under the original audio (original kept at 25%).
+// Original sound from another VIRALX video: its audio is extracted and mixed the same way.
+import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js";
+import { fetchFile, toBlobURL } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js";
+let ff = null;
+async function loadFF(st) {
+  if (ff) return ff;
+  ff = new FFmpeg();
+  const base = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";
+  await ff.load({
+    coreURL: await toBlobURL(base + "/ffmpeg-core.js", "text/javascript"),
+    wasmURL: await toBlobURL(base + "/ffmpeg-core.wasm", "application/wasm")
+  });
+  return ff;
+}
+window.VX_MIX = async function (file, soundRef, st) {
+  const ffmpeg = await loadFF(st);
+  await ffmpeg.writeFile("in.mp4", await fetchFile(file));
+  if (soundRef.indexOf("lib:") === 0) {
+    const lib = (window.VX_SOUNDS || []).filter(function (s) { return s.id === soundRef; })[0];
+    if (!lib) throw new Error("sound not found");
+    await ffmpeg.writeFile("sound.mp3", await fetchFile(window.VX_soundSrc(lib)));
+  } else if (soundRef.indexOf("orig:") === 0) {
+    const sb = window.VX && window.VX.sb;
+    if (!sb) throw new Error("no backend");
+    const r = await sb.from("videos").select("video_url").eq("id", soundRef.slice(5)).maybeSingle();
+    if (r.error || !r.data) throw new Error("source video not found");
+    await ffmpeg.writeFile("src.mp4", await fetchFile(r.data.video_url));
+    await ffmpeg.exec(["-i", "src.mp4", "-vn", "-codec:a", "libmp3lame", "-q:a", "4", "sound.mp3"]);
+  } else {
+    throw new Error("unknown sound");
+  }
+  try {
+    await ffmpeg.exec(["-i", "in.mp4", "-stream_loop", "-1", "-i", "sound.mp3",
+      "-filter_complex", "[0:a]volume=0.25[a0];[1:a]volume=1.0[a1];[a0][a1]amix=inputs=2:duration=first:dropout_transition=0[a]",
+      "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-shortest", "out.mp4"]);
+  } catch (e) {
+    // source video had no audio track — the sound becomes the audio
+    await ffmpeg.exec(["-i", "in.mp4", "-stream_loop", "-1", "-i", "sound.mp3",
+      "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-shortest", "out.mp4"]);
+  }
+  const out = await ffmpeg.readFile("out.mp4");
+  return new File([new Blob([out.buffer], { type: "video/mp4" })], "viralx-mix.mp4", { type: "video/mp4" });
+};
 </script>
 <script src="js/fx.js"></script>
 <script src="js/install.js"></script>
