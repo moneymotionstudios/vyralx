@@ -23,7 +23,9 @@
     <h3 style="margin-top:0;">🎵 Music Search — every platform</h3>
     <p class="muted">Search any song, artist or beat across the free music platforms:</p>
     <input id="mq" type="search" placeholder="Search any song, artist, beat…">
+    <button class="btn btn-green btn-block" type="button" id="mq-all" style="margin-top:10px;">🌍 Search ALL platforms</button>
     <p class="form-error" id="m-error"></p>
+    <div id="mq-results"></div>
     <div id="music-platforms" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
       <button class="btn" type="button" data-mq="youtube">▶️ YouTube</button>
       <button class="btn" type="button" data-mq="ytmusic">🎧 YouTube Music</button>
@@ -65,14 +67,44 @@
     google: "https://www.google.com/search?q=",
     yahoo: "https://search.yahoo.com/search?p="
   };
+  var NAMES = {
+    youtube: "▶️ YouTube", ytmusic: "🎧 YouTube Music", spotify: "🟢 Spotify",
+    soundcloud: "🟠 SoundCloud", apple: "🍎 Apple Music", audiomack: "🔶 Audiomack",
+    google: "🔎 Google", yahoo: "🟣 Yahoo"
+  };
+  function mqQuery() {
+    var q = document.getElementById("mq").value.trim();
+    var err = document.getElementById("m-error");
+    if (!q) { err.textContent = "Type a song, artist or beat first."; return ""; }
+    err.textContent = "";
+    return q;
+  }
   document.getElementById("music-platforms").addEventListener("click", function (e) {
     var b = e.target.closest("[data-mq]");
     if (!b) return;
-    var q = document.getElementById("mq").value.trim();
-    var err = document.getElementById("m-error");
-    if (!q) { err.textContent = "Type a song, artist or beat first."; return; }
-    err.textContent = "";
+    var q = mqQuery();
+    if (!q) return;
     window.open(URLS[b.getAttribute("data-mq")] + encodeURIComponent(q), "_blank", "noopener");
+  });
+  document.getElementById("mq-all").addEventListener("click", function () {
+    var q = mqQuery();
+    if (!q) return;
+    var box = document.getElementById("mq-results");
+    box.innerHTML = "";
+    var h = document.createElement("p");
+    h.innerHTML = "<b>“" + q.replace(/</g, "&lt;") + "” — on every platform:</b>";
+    box.appendChild(h);
+    Object.keys(URLS).forEach(function (k) {
+      var p = document.createElement("p");
+      p.style.margin = "8px 0";
+      var a = document.createElement("a");
+      a.href = URLS[k] + encodeURIComponent(q);
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = NAMES[k] + " — find it here";
+      p.appendChild(a);
+      box.appendChild(p);
+    });
   });
 })();
 
