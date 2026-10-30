@@ -27,14 +27,14 @@
     <p class="form-error" id="m-error"></p>
     <div id="mq-results"></div>
     <div id="music-platforms" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
-      <button class="btn" type="button" data-mq="youtube">▶️ YouTube</button>
-      <button class="btn" type="button" data-mq="ytmusic">🎧 YouTube Music</button>
-      <button class="btn" type="button" data-mq="spotify">🟢 Spotify</button>
-      <button class="btn" type="button" data-mq="soundcloud">🟠 SoundCloud</button>
-      <button class="btn" type="button" data-mq="apple">🍎 Apple Music</button>
-      <button class="btn" type="button" data-mq="audiomack">🔶 Audiomack</button>
-      <button class="btn" type="button" data-mq="google">🔎 Google</button>
-      <button class="btn" type="button" data-mq="yahoo">🟣 Yahoo</button>
+      <a class="btn" data-mq="youtube" href="#" target="_blank" rel="noopener">▶️ YouTube</a>
+      <a class="btn" data-mq="ytmusic" href="#" target="_blank" rel="noopener">🎧 YouTube Music</a>
+      <a class="btn" data-mq="spotify" href="#" target="_blank" rel="noopener">🟢 Spotify</a>
+      <a class="btn" data-mq="soundcloud" href="#" target="_blank" rel="noopener">🟠 SoundCloud</a>
+      <a class="btn" data-mq="apple" href="#" target="_blank" rel="noopener">🍎 Apple Music</a>
+      <a class="btn" data-mq="audiomack" href="#" target="_blank" rel="noopener">🔶 Audiomack</a>
+      <a class="btn" data-mq="google" href="#" target="_blank" rel="noopener">🔎 Google</a>
+      <a class="btn" data-mq="yahoo" href="#" target="_blank" rel="noopener">🟣 Yahoo</a>
     </div>
   </div>
   <div class="card">
@@ -79,12 +79,40 @@
     err.textContent = "";
     return q;
   }
+  // shared: build the all-platform link list for any query (used by the
+  // Music Search card AND the main Discover search)
+  window.VX_platformLinks = function (q) {
+    return Object.keys(URLS).map(function (k) {
+      return { name: NAMES[k], url: URLS[k] + encodeURIComponent(q) };
+    });
+  };
+  window.VX_renderPlatformLinks = function (box, q) {
+    window.VX_platformLinks(q).forEach(function (it) {
+      var p = document.createElement("p");
+      p.style.margin = "8px 0";
+      var a = document.createElement("a");
+      a.href = it.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = it.name + " — find it here";
+      p.appendChild(a);
+      box.appendChild(p);
+    });
+  };
+  // platform buttons are real links whose href follows the typed query —
+  // reliable inside the installed app, where popup-style opens get blocked
+  var mqInput = document.getElementById("mq");
+  function syncPlatformHrefs() {
+    var q = mqInput.value.trim();
+    document.querySelectorAll("#music-platforms [data-mq]").forEach(function (a) {
+      a.href = q ? URLS[a.getAttribute("data-mq")] + encodeURIComponent(q) : "#";
+    });
+  }
+  mqInput.addEventListener("input", syncPlatformHrefs);
   document.getElementById("music-platforms").addEventListener("click", function (e) {
     var b = e.target.closest("[data-mq]");
     if (!b) return;
-    var q = mqQuery();
-    if (!q) return;
-    window.open(URLS[b.getAttribute("data-mq")] + encodeURIComponent(q), "_blank", "noopener");
+    if (!mqQuery()) { e.preventDefault(); return; }
   });
   document.getElementById("mq-all").addEventListener("click", function () {
     var q = mqQuery();
@@ -94,17 +122,7 @@
     var h = document.createElement("p");
     h.innerHTML = "<b>“" + q.replace(/</g, "&lt;") + "” — on every platform:</b>";
     box.appendChild(h);
-    Object.keys(URLS).forEach(function (k) {
-      var p = document.createElement("p");
-      p.style.margin = "8px 0";
-      var a = document.createElement("a");
-      a.href = URLS[k] + encodeURIComponent(q);
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = NAMES[k] + " — find it here";
-      p.appendChild(a);
-      box.appendChild(p);
-    });
+    window.VX_renderPlatformLinks(box, q);
   });
 })();
 
@@ -148,7 +166,24 @@ document.getElementById("search-form").addEventListener("submit", async function
     var who = await sb.from("profiles").select("id,username").in("id", ids);
     if (who.data) who.data.forEach(function (p) { names[p.id] = p.username; });
   }
-  if (!res.data.length && !(pr.data && pr.data.length)) { out.innerHTML = '<p class="muted center">No matches yet.</p>'; return; }
+  function everywhere() {
+    var h3 = document.createElement("h3");
+    h3.textContent = "🌍 Everywhere — all platforms & search engines";
+    out.appendChild(h3);
+    var note = document.createElement("p");
+    note.className = "muted";
+    note.textContent = "Signed, unsigned, major — find any artist, anywhere:";
+    out.appendChild(note);
+    if (window.VX_renderPlatformLinks) window.VX_renderPlatformLinks(out, q);
+  }
+  if (!res.data.length && !(pr.data && pr.data.length)) {
+    var nm = document.createElement("p");
+    nm.className = "muted center";
+    nm.textContent = "No VIRALX matches yet — try them everywhere:";
+    out.appendChild(nm);
+    everywhere();
+    return;
+  }
   if (res.data.length) {
     var h2 = document.createElement("h3"); h2.textContent = "Videos"; out.appendChild(h2);
   }
@@ -160,6 +195,7 @@ document.getElementById("search-form").addEventListener("submit", async function
       '<p class="muted">' + (v.caption || "") + " · ▲ " + (v.like_count || 0) + "</p>";
     out.appendChild(d);
   });
+  everywhere();
 });
 </script>
 <script src="js/fx.js"></script>
