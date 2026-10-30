@@ -176,11 +176,121 @@ document.getElementById("search-form").addEventListener("submit", async function
     out.appendChild(note);
     if (window.VX_renderPlatformLinks) window.VX_renderPlatformLinks(out, q);
   }
+  function fmtDur(s) {
+    if (!s && s !== 0) return "";
+    s = Math.round(s);
+    return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
+  }
+  function webResults() {
+    // ---- real videos from the web (YouTube catalog, free public index) ----
+    var vh = document.createElement("h3");
+    vh.textContent = "🎬 Videos — from the web";
+    out.appendChild(vh);
+    var vbox = document.createElement("div");
+    vbox.innerHTML = '<p class="muted">Searching videos…</p>';
+    out.appendChild(vbox);
+    var bases = ["https://api.piped.private.coffee", "https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de"];
+    function tryBase(i) {
+      if (i >= bases.length) { vbox.innerHTML = '<p class="muted">Video search is busy right now — use the platform links below.</p>'; return; }
+      var ctl = new AbortController();
+      var to = setTimeout(function () { ctl.abort(); }, 7000);
+      fetch(bases[i] + "/search?q=" + encodeURIComponent(q) + "&filter=videos", { signal: ctl.signal })
+        .then(function (r) { clearTimeout(to); if (!r.ok) throw new Error("bad"); return r.json(); })
+        .then(function (d) {
+          var items = (d.items || []).filter(function (it) { return it.type === "stream" || it.url; }).slice(0, 10);
+          if (!items.length) { vbox.innerHTML = '<p class="muted">No web videos found for that name.</p>'; return; }
+          vbox.innerHTML = "";
+          items.forEach(function (it) {
+            var id = (it.url || "").replace("/watch?v=", "");
+            var card = document.createElement("div");
+            card.className = "card";
+            var img = document.createElement("img");
+            img.src = it.thumbnail || "";
+            img.alt = "";
+            img.loading = "lazy";
+            img.style.cssText = "width:100%;border-radius:10px;display:block;";
+            var t = document.createElement("p");
+            t.style.margin = "8px 0 2px";
+            var tb = document.createElement("b");
+            tb.textContent = it.title || "Video";
+            t.appendChild(tb);
+            var meta = document.createElement("p");
+            meta.className = "muted";
+            meta.style.margin = "2px 0 0";
+            meta.textContent = (it.uploaderName || "") + (it.duration ? " · " + fmtDur(it.duration) : "") + (it.views ? " · " + Number(it.views).toLocaleString() + " views" : "");
+            card.appendChild(img);
+            card.appendChild(t);
+            card.appendChild(meta);
+            if (id) {
+              img.style.cursor = "pointer";
+              img.title = "Tap to play";
+              img.addEventListener("click", function () {
+                var f = document.createElement("iframe");
+                f.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0";
+                f.style.cssText = "width:100%;aspect-ratio:16/9;border:0;border-radius:10px;display:block;";
+                f.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
+                f.setAttribute("allowfullscreen", "");
+                card.replaceChild(f, img);
+              });
+            }
+            vbox.appendChild(card);
+          });
+        })
+        .catch(function () { clearTimeout(to); tryBase(i + 1); });
+    }
+    tryBase(0);
+    // ---- real music from the platforms (Apple catalog, free, no key) ----
+    var mh = document.createElement("h3");
+    mh.textContent = "🎵 Music — from the platforms";
+    out.appendChild(mh);
+    var mbox = document.createElement("div");
+    mbox.innerHTML = '<p class="muted">Searching music…</p>';
+    out.appendChild(mbox);
+    fetch("https://itunes.apple.com/search?term=" + encodeURIComponent(q) + "&media=music&entity=song&limit=12")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var songs = (d.results || []).filter(function (s) { return s.previewUrl; }).slice(0, 10);
+        if (!songs.length) { mbox.innerHTML = '<p class="muted">No tracks found for that name.</p>'; return; }
+        mbox.innerHTML = "";
+        songs.forEach(function (s) {
+          var card = document.createElement("div");
+          card.className = "card";
+          card.style.display = "flex";
+          card.style.gap = "10px";
+          card.style.alignItems = "center";
+          var art = document.createElement("img");
+          art.src = s.artworkUrl100 || "";
+          art.alt = "";
+          art.style.cssText = "width:64px;height:64px;border-radius:8px;flex:none;";
+          var mid = document.createElement("div");
+          mid.style.flex = "1";
+          var tb = document.createElement("b");
+          tb.textContent = s.trackName || "Track";
+          var sub = document.createElement("p");
+          sub.className = "muted";
+          sub.style.margin = "2px 0 6px";
+          sub.textContent = (s.artistName || "") + (s.collectionName ? " · " + s.collectionName : "");
+          var au = document.createElement("audio");
+          au.controls = true;
+          au.preload = "none";
+          au.src = s.previewUrl;
+          au.style.width = "100%";
+          mid.appendChild(tb);
+          mid.appendChild(sub);
+          mid.appendChild(au);
+          card.appendChild(art);
+          card.appendChild(mid);
+          mbox.appendChild(card);
+        });
+      })
+      .catch(function () { mbox.innerHTML = '<p class="muted">Music search is busy right now — use the platform links below.</p>'; });
+  }
   if (!res.data.length && !(pr.data && pr.data.length)) {
     var nm = document.createElement("p");
     nm.className = "muted center";
-    nm.textContent = "No VIRALX matches yet — try them everywhere:";
+    nm.textContent = "No VIRALX matches yet — here they are everywhere else:";
     out.appendChild(nm);
+    webResults();
     everywhere();
     return;
   }
@@ -195,6 +305,7 @@ document.getElementById("search-form").addEventListener("submit", async function
       '<p class="muted">' + (v.caption || "") + " · ▲ " + (v.like_count || 0) + "</p>";
     out.appendChild(d);
   });
+  webResults();
   everywhere();
 });
 </script>
