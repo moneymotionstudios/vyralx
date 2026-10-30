@@ -137,7 +137,7 @@
     var lib = (window.VX_SOUNDS || []).filter(function (s) { return s.id === sel.value; })[0];
     if (!lib) { this.textContent = "▶ Pick a library sound to preview it"; return; }
     if (audio) { audio.pause(); audio = null; this.textContent = "▶ Preview the sound"; return; }
-    audio = new Audio(window.VX_soundSrc(lib)); audio.play();
+    audio = new Audio(window.VX_soundSrc(lib)); audio.loop = true; audio.play();
     this.textContent = "⏸ Stop preview";
     audio.addEventListener("ended", function () { document.getElementById("sound-preview").textContent = "▶ Preview the sound"; audio = null; });
   });
