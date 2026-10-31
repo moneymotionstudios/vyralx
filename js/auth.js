@@ -8,6 +8,7 @@
   var submit = document.getElementById("auth-submit");
   var sub = document.getElementById("auth-sub");
   var userField = document.getElementById("username-field");
+  var profileFields = document.getElementById("profile-fields");
   var emailField = document.getElementById("email-field");
   var emailInput = document.getElementById("email");
   var pwInput = document.getElementById("password");
@@ -21,6 +22,7 @@
   function setMode(m) {
     mode = m;
     userField.classList.toggle("hidden", m !== "signup");
+    if (profileFields) profileFields.classList.toggle("hidden", m !== "signup");
     submit.textContent = m === "signup" ? "Create account" : "Sign in";
     sub.textContent = m === "signup" ? "Create your account — free forever." : "Sign in to post, go live, and get paid.";
     document.getElementById("auth-toggle").textContent = m === "signup" ? "Already have an account? Sign in" : "New here? Create an account";
@@ -33,6 +35,7 @@
     document.querySelector(".card h1").textContent = "Set a new password";
     sub.textContent = "Type your new password below — you'll be signed in right after.";
     userField.classList.add("hidden");
+    if (profileFields) profileFields.classList.add("hidden");
     emailField.classList.add("hidden");
     emailInput.required = false;
     pwLabel.textContent = "New password";
@@ -111,7 +114,11 @@
         var su = await sb.auth.signUp({ email: email, password: password });
         if (su.error) throw su.error;
         if (su.data.user) {
-          var ins = await sb.from("profiles").insert({ id: su.data.user.id, username: username, display_name: username });
+          var dnameEl = document.getElementById("dname");
+          var bioEl = document.getElementById("bio");
+          var dname = dnameEl ? dnameEl.value.trim() : "";
+          var bio = bioEl ? bioEl.value.trim() : "";
+          var ins = await sb.from("profiles").insert({ id: su.data.user.id, username: username, display_name: dname || username, bio: bio || null });
           if (ins.error) throw ins.error;
         }
         location.href = "profile.html";

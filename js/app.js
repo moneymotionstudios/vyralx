@@ -290,11 +290,12 @@
     wrap.className = "post";
     wrap.dataset.vid = v.uuid || v.id || "";
     var initial = esc((v.username || "?").charAt(0).toUpperCase());
+    var avatarHtml = v.avatar_url ? '<img src="' + esc(v.avatar_url) + '" alt="">' : initial;
     wrap.innerHTML =
       '<video src="' + esc(v.video_url) + '" loop playsinline muted preload="metadata"></video>' +
       '<div class="shade"></div>' +
       '<div class="rail">' +
-        '<div class="avatar-wrap"><div class="avatar">' + initial + "</div>" +
+        '<div class="avatar-wrap"><div class="avatar">' + avatarHtml + "</div>" +
         ((v.uuid && v.owner && (!ME || ME.id !== v.owner)) ? '<button class="follow-btn" type="button" aria-label="Follow creator">+</button>' : "") +
         "</div>" +
         '<button class="like-btn"><span class="bubble">▲</span><span class="like-count">' + (v.likes || 0) + "</span></button>" +
@@ -481,6 +482,7 @@
         }).map(function (r) {
           return {
             uuid: r.id, owner: r.user_id, username: (r.profiles && r.profiles.username) || "creator",
+            avatar_url: (r.profiles && r.profiles.avatar_url) || null,
             verified: !!(r.profiles && r.profiles.verified), caption: r.caption || "",
             tags: r.hashtags || [], video_url: r.video_url, likes: r.like_count || 0,
             comments: r.comment_count || 0, category: r.category, myLike: false, myFollow: false,

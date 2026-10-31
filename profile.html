@@ -35,6 +35,25 @@
     <div id="edit-form" class="hidden" style="margin-bottom:10px;">
       <input id="e-name" type="text" maxlength="40" placeholder="Display name" style="width:100%;margin-bottom:8px;">
       <input id="e-bio" type="text" maxlength="150" placeholder="Bio" style="width:100%;margin-bottom:8px;">
+      <div style="margin:12px 0;">
+        <label style="display:block;margin-bottom:6px;">Profile picture</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label class="btn" for="e-avatar-file" style="cursor:pointer;">📷 Upload a photo</label>
+          <input id="e-avatar-file" type="file" accept="image/*" class="hidden">
+          <button class="btn" id="e-avatar-remove" type="button">Remove photo</button>
+        </div>
+        <p class="muted" style="margin:6px 0 0;font-size:13px;">Any image type works — it's converted automatically. Your picture shows next to your name, posts and comments so people know it's you.</p>
+      </div>
+      <div style="margin:12px 0;">
+        <label style="display:block;margin-bottom:6px;">🎨 Or create your avatar</label>
+        <div id="av-emojis" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+        <div id="av-grads" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div class="avatar" id="av-preview" style="width:64px;height:64px;font-size:32px;display:flex;align-items:center;justify-content:center;">😎</div>
+          <button class="btn btn-green" id="av-create" type="button">Use this avatar</button>
+        </div>
+      </div>
+      <p class="form-error" id="e-avatar-msg"></p>
       <button class="btn btn-green btn-block" id="edit-save" type="button">Save profile</button>
       <p class="form-error" id="e-error"></p>
     </div>
@@ -55,6 +74,20 @@
     <div class="cell"></div><div class="cell"></div><div class="cell"></div>
   </div>
   <p class="muted center" id="p-empty">Nothing posted yet — your uploads land here.</p>
+
+  <style>
+    .g-actions{position:absolute;right:4px;bottom:4px;display:flex;gap:4px;z-index:2}
+    .g-actions button{background:rgba(0,0,0,.65);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:2px 7px;font-size:13px;cursor:pointer}
+  </style>
+  <div id="photos-block" class="hidden">
+    <h2 style="margin:22px 0 4px;">Your photos</h2>
+    <p class="muted" style="margin:0 0 8px;">Upload images to your profile so people know you. Tap ★ on any photo to make it your profile picture.</p>
+    <label class="btn btn-green" for="g-file" style="cursor:pointer;display:inline-block;margin-bottom:6px;">📸 Upload photos</label>
+    <input id="g-file" type="file" accept="image/*" multiple class="hidden">
+    <div class="grid" id="g-grid"></div>
+    <p class="muted center" id="g-empty">No photos yet.</p>
+    <p class="form-error" id="g-msg"></p>
+  </div>
 </main>
 
 <nav class="bottomnav">
@@ -82,7 +115,8 @@
     document.getElementById("p-name").textContent = (pr.data.display_name || pr.data.username) + (pr.data.is_pro ? " ⭐PRO" : "");
     document.getElementById("p-username").textContent = "@" + pr.data.username + (pr.data.verified ? " ✔" : "");
     document.getElementById("p-bio").textContent = pr.data.bio || "";
-    document.getElementById("p-avatar").textContent = (pr.data.username || "?").charAt(0).toUpperCase();
+    if (pr.data.avatar_url) document.getElementById("p-avatar").innerHTML = '<img src="' + pr.data.avatar_url + '" alt="">';
+    else document.getElementById("p-avatar").textContent = (pr.data.username || "?").charAt(0).toUpperCase();
   }
   var fol = await sb.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", u.id);
   var fing = await sb.from("follows").select("follower_id", { count: "exact", head: true }).eq("follower_id", u.id);
@@ -126,6 +160,165 @@
       setTimeout(function () { editToggle.textContent = "✏️ Edit profile"; }, 1800);
     });
   }
+
+  // ===== Profile picture upload, avatar maker, photo gallery =====
+  function setHeaderAvatar(url) {
+    var el = document.getElementById("p-avatar");
+    if (!el) return;
+    if (url) el.innerHTML = '<img src="' + url + '" alt="">';
+    else el.textContent = ((pr.data && pr.data.username) || "?").charAt(0).toUpperCase();
+  }
+  function avMsg(t, ok) {
+    var m = document.getElementById("e-avatar-msg");
+    if (!m) return;
+    m.textContent = t;
+    m.style.color = ok ? "#8BFF00" : "";
+  }
+  function fileToJpeg(file, maxSide) {
+    return new Promise(function (resolve) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var w = img.naturalWidth, h = img.naturalHeight;
+          var s = Math.min(1, maxSide / Math.max(w, h));
+          var c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(w * s));
+          c.height = Math.max(1, Math.round(h * s));
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#000"; ctx.fillRect(0, 0, c.width, c.height);
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          c.toBlob(function (b) { resolve(b); }, "image/jpeg", 0.85);
+        } catch (e) { URL.revokeObjectURL(url); resolve(null); }
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
+  async function saveAvatarBlob(blob, ext) {
+    var path = u.id + "/avatar-" + Date.now() + "." + ext;
+    var up = await sb.storage.from("images").upload(path, blob, { contentType: ext === "png" ? "image/png" : "image/jpeg", upsert: false });
+    if (up.error) throw up.error;
+    var url = sb.storage.from("images").getPublicUrl(path).data.publicUrl;
+    var upd = await sb.from("profiles").update({ avatar_url: url }).eq("id", u.id);
+    if (upd.error) throw upd.error;
+    if (pr.data) pr.data.avatar_url = url;
+    setHeaderAvatar(url);
+    return url;
+  }
+  var avFile = document.getElementById("e-avatar-file");
+  if (avFile) avFile.addEventListener("change", async function () {
+    if (!avFile.files || !avFile.files[0]) return;
+    avMsg("Uploading your photo…", true);
+    try {
+      var blob = await fileToJpeg(avFile.files[0], 1024);
+      await saveAvatarBlob(blob || avFile.files[0], "jpg");
+      avMsg("✓ Profile picture updated — it shows next to your name, posts and comments.", true);
+    } catch (e) { avMsg("Upload failed — try another photo.", false); }
+    avFile.value = "";
+  });
+  var avRemove = document.getElementById("e-avatar-remove");
+  if (avRemove) avRemove.addEventListener("click", async function () {
+    var upd = await sb.from("profiles").update({ avatar_url: null }).eq("id", u.id);
+    if (upd.error) { avMsg("Could not remove — try again.", false); return; }
+    if (pr.data) pr.data.avatar_url = null;
+    setHeaderAvatar(null);
+    avMsg("Profile picture removed.", true);
+  });
+  // Avatar maker: pick an emoji + a background, we render it into a picture.
+  var AV_EMOJIS = ["😎","🔥","🎤","🎧","👑","🐉","🚀","💎","🎬","🎵","⚡","🌍","🦁","🐺","🦅","🎸","🎹","🎭","🎮","👾","🤖","👽","🏀","⚽"];
+  var AV_GRADS = [["#8BFF00","#0c2b00"],["#7b2ff7","#f107a3"],["#ff512f","#dd2476"],["#2193b0","#6dd5ed"],["#f7971e","#ffd200"],["#11998e","#38ef7d"],["#232526","#414345"],["#8e2de2","#4a00e0"]];
+  var avEmoji = AV_EMOJIS[0], avGrad = 0;
+  var emBox = document.getElementById("av-emojis"), grBox = document.getElementById("av-grads"), avPrev = document.getElementById("av-preview");
+  function drawPreview() {
+    if (!avPrev) return;
+    avPrev.textContent = avEmoji;
+    avPrev.style.background = "linear-gradient(140deg," + AV_GRADS[avGrad][0] + "," + AV_GRADS[avGrad][1] + ")";
+  }
+  if (emBox) AV_EMOJIS.forEach(function (e) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn"; b.textContent = e; b.style.padding = "6px 9px";
+    b.addEventListener("click", function () { avEmoji = e; drawPreview(); });
+    emBox.appendChild(b);
+  });
+  if (grBox) AV_GRADS.forEach(function (g, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn"; b.style.padding = "10px 14px";
+    b.style.background = "linear-gradient(140deg," + g[0] + "," + g[1] + ")";
+    b.addEventListener("click", function () { avGrad = i; drawPreview(); });
+    grBox.appendChild(b);
+  });
+  drawPreview();
+  var avCreate = document.getElementById("av-create");
+  if (avCreate) avCreate.addEventListener("click", function () {
+    avMsg("Creating your avatar…", true);
+    var c = document.createElement("canvas");
+    c.width = 512; c.height = 512;
+    var ctx = c.getContext("2d");
+    var gr = ctx.createLinearGradient(0, 0, 512, 512);
+    gr.addColorStop(0, AV_GRADS[avGrad][0]); gr.addColorStop(1, AV_GRADS[avGrad][1]);
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, 512, 512);
+    ctx.font = "300px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(avEmoji, 256, 276);
+    c.toBlob(async function (blob) {
+      if (!blob) { avMsg("Avatar failed — try again.", false); return; }
+      try { await saveAvatarBlob(blob, "png"); avMsg("✓ Avatar created and set as your profile picture.", true); }
+      catch (e) { avMsg("Avatar upload failed — try again.", false); }
+    }, "image/png");
+  });
+  // Photo gallery: images bucket, <uid>/gallery/ — set any photo as profile picture.
+  var photosBlock = document.getElementById("photos-block");
+  if (photosBlock) photosBlock.classList.remove("hidden");
+  var gGrid = document.getElementById("g-grid"), gEmpty = document.getElementById("g-empty"), gMsg = document.getElementById("g-msg");
+  async function loadGallery() {
+    if (!gGrid) return;
+    var res = await sb.storage.from("images").list(u.id + "/gallery", { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+    gGrid.innerHTML = "";
+    var files = (res.data || []).filter(function (f) { return !!f.id; });
+    if (gEmpty) gEmpty.classList.toggle("hidden", files.length > 0);
+    files.forEach(function (f) {
+      var path = u.id + "/gallery/" + f.name;
+      var url = sb.storage.from("images").getPublicUrl(path).data.publicUrl;
+      var cell = document.createElement("div");
+      cell.className = "cell";
+      cell.innerHTML = '<img src="' + url + '" alt="">' +
+        '<div class="g-actions"><button type="button" class="g-star" title="Set as profile picture">★</button><button type="button" class="g-del" title="Delete photo">🗑</button></div>';
+      cell.querySelector(".g-star").addEventListener("click", async function () {
+        var upd = await sb.from("profiles").update({ avatar_url: url }).eq("id", u.id);
+        if (upd.error) { if (gMsg) gMsg.textContent = "Could not set that photo — try again."; return; }
+        if (pr.data) pr.data.avatar_url = url;
+        setHeaderAvatar(url);
+        if (gMsg) gMsg.textContent = "";
+        avMsg("✓ That's your profile picture now.", true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      cell.querySelector(".g-del").addEventListener("click", async function () {
+        var rm = await sb.storage.from("images").remove([path]);
+        if (rm.error) { if (gMsg) gMsg.textContent = "Delete failed — try again."; return; }
+        loadGallery();
+      });
+      gGrid.appendChild(cell);
+    });
+  }
+  loadGallery();
+  var gFile = document.getElementById("g-file");
+  if (gFile) gFile.addEventListener("change", async function () {
+    if (!gFile.files || !gFile.files.length) return;
+    var n = gFile.files.length, failed = 0;
+    for (var i = 0; i < n; i++) {
+      if (gMsg) gMsg.textContent = "Uploading photo " + (i + 1) + " of " + n + "…";
+      try {
+        var blob = await fileToJpeg(gFile.files[i], 1600);
+        var path = u.id + "/gallery/" + Date.now() + "-" + i + ".jpg";
+        var up = await sb.storage.from("images").upload(path, blob || gFile.files[i], { contentType: "image/jpeg", upsert: false });
+        if (up.error) throw up.error;
+      } catch (e) { failed++; }
+    }
+    if (gMsg) gMsg.textContent = failed ? "Some photos failed — the rest are up." : "";
+    gFile.value = "";
+    loadGallery();
+  });
 })();
 </script>
 <script src="js/fx.js"></script>
