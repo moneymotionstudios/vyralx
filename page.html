@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090B0A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Page — VIRALX</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/viralx.css">
+<style>
+  .pg-hero{border:1px solid rgba(139,255,0,.25);border-radius:18px;padding:18px;background:rgba(10,12,11,.82);backdrop-filter:blur(4px)}
+  .pg-sec{border:1px solid rgba(139,255,0,.16);border-radius:16px;padding:14px;margin-top:14px;background:rgba(10,12,11,.82);backdrop-filter:blur(4px)}
+  .pg-sec h3{margin:0 0 10px}
+  .pg-live{display:block;border:1px solid #ff2d55;background:rgba(255,45,85,.14);color:#fff;border-radius:14px;padding:12px 14px;margin-top:14px;text-decoration:none;font-weight:800}
+  .trk{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid rgba(255,255,255,.09);border-radius:10px;margin-bottom:6px;cursor:pointer;background:rgba(255,255,255,.03)}
+  .trk.on{border-color:var(--pg-accent,#8BFF00)}
+  .trk .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .fr{text-align:center;text-decoration:none;color:inherit}
+  .fr .avatar{width:56px;height:56px;margin:0 auto 4px;font-size:20px}
+  .fr span{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wall-row{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+  .wall-row .vx-c-avatar{flex:none}
+  .wall-del{margin-left:auto;background:none;border:none;color:#ff8296;cursor:pointer;font-size:14px}
+  body.pg-bgimg{background-size:cover;background-position:center;background-attachment:fixed}
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="center muted" id="pg-loading">Loading page…</p>
+  <div id="pg-wrap" class="hidden">
+    <div class="pg-hero">
+      <div class="profile-head">
+        <div class="avatar" id="pg-avatar">?</div>
+        <div>
+          <div class="vx-logo" style="font-size:22px;" id="pg-name">Creator</div>
+          <div class="muted" id="pg-username">@user</div>
+          <div id="pg-badges" style="margin-top:4px;font-size:12px;"></div>
+        </div>
+      </div>
+      <p id="pg-bio" class="muted" style="margin:10px 0 0;"></p>
+      <div class="stat-row">
+        <div class="stat"><b id="pg-following">0</b><span>Following</span></div>
+        <div class="stat"><b id="pg-followers">0</b><span>Followers</span></div>
+        <div class="stat"><b id="pg-likes">0</b><span>Likes</span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-green hidden" id="pg-follow" type="button">+ Follow</button>
+        <button class="btn hidden" id="pg-design" type="button">🎨 Design my page</button>
+        <button class="btn" id="pg-share" type="button">↗ Share page</button>
+      </div>
+    </div>
+
+    <a class="pg-live hidden" id="pg-live" href="#">🔴 LIVE NOW — tap to watch + join the live chat</a>
+
+    <div class="pg-sec hidden" id="pg-music-sec">
+      <h3>🎵 Music</h3>
+      <div id="pg-tracks"></div>
+      <audio id="pg-audio" controls style="width:100%;margin-top:6px;"></audio>
+    </div>
+
+    <div class="pg-sec">
+      <h3>🎬 Videos</h3>
+      <div class="grid" id="pg-vgrid" style="margin-top:0;"></div>
+      <p class="muted center" id="pg-vempty">No videos yet.</p>
+    </div>
+
+    <div class="pg-sec hidden" id="pg-top-sec">
+      <h3>⭐ Top Friends</h3>
+      <div class="fr-grid" id="pg-top"></div>
+    </div>
+
+    <div class="pg-sec">
+      <h3>👥 Friends</h3>
+      <div class="fr-grid" id="pg-friends"></div>
+      <p class="muted center" id="pg-fempty">No friends shown yet.</p>
+    </div>
+
+    <div class="pg-sec">
+      <h3>💬 The Wall</h3>
+      <div id="pg-wall-form" class="hidden" style="margin-bottom:10px;">
+        <input id="pg-wall-input" type="text" maxlength="300" placeholder="Write on the wall…" style="width:100%;margin-bottom:8px;">
+        <button class="btn btn-green btn-block" id="pg-wall-post" type="button">Post to the wall</button>
+      </div>
+      <p class="muted" id="pg-wall-signin"><a href="auth.html">Sign in</a> to write on the wall.</p>
+      <p class="form-error" id="pg-wall-err"></p>
+      <div id="pg-wall"></div>
+      <p class="muted center" id="pg-wempty">Nothing on the wall yet — be the first.</p>
+    </div>
+  </div>
+</main>
+
+<nav class="bottomnav">
+  <a href="index.html"><span class="ic">⌂</span>Home</a>
+  <a href="discover.html"><span class="ic">◎</span>Discover</a>
+  <a href="create.html" class="create"><span class="ic">+</span>Create</a>
+  <a href="live.html"><span class="ic">●</span>LIVE</a>
+  <a href="profile.html"><span class="ic">◉</span>Profile</a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/banner-data.js"></script>
+<script src="js/app.js"></script>
+<script>
+(async function () {
+  var sb = window.VX && window.VX.sb;
+  var loading = document.getElementById("pg-loading");
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  if (!sb) { loading.textContent = "Pages need the VIRALX backend — try again in a moment."; return; }
+  var qs = new URLSearchParams(location.search);
+  var uname = (qs.get("u") || "").toLowerCase();
+  var uidParam = qs.get("id") || "";
+  var me = (await sb.auth.getUser()).data.user;
+
+  var pq = sb.from("profiles").select("*");
+  var pr = uidParam ? await pq.eq("id", uidParam).maybeSingle() : await pq.eq("username", uname).maybeSingle();
+  if (!pr.data) { loading.textContent = "That page doesn't exist (yet)."; return; }
+  var page = pr.data;
+  document.title = (page.display_name || page.username) + " — VIRALX";
+  loading.classList.add("hidden");
+  document.getElementById("pg-wrap").classList.remove("hidden");
+
+  // --- theme ---
+  var theme = page.page_theme || {};
+  if (theme.accent) document.documentElement.style.setProperty("--pg-accent", theme.accent);
+  if (theme.bgImage) {
+    document.body.classList.add("pg-bgimg");
+    document.body.style.backgroundImage = "url('" + theme.bgImage + "')";
+  } else if (theme.grad && theme.grad.length === 2) {
+    document.body.style.background = "linear-gradient(160deg," + theme.grad[0] + "," + theme.grad[1] + ") fixed";
+  }
+
+  // --- header ---
+  var avEl = document.getElementById("pg-avatar");
+  if (page.avatar_url) avEl.innerHTML = '<img src="' + esc(page.avatar_url) + '" alt="">';
+  else avEl.textContent = (page.username || "?").charAt(0).toUpperCase();
+  document.getElementById("pg-name").textContent = (page.display_name || page.username) + (page.is_pro ? " ⭐PRO" : "");
+  document.getElementById("pg-username").textContent = "@" + page.username + (page.verified ? " ✔" : "");
+  document.getElementById("pg-bio").textContent = page.bio || "";
+  var badges = "";
+  if (page.age_verified) badges += '<span style="border:1px solid #ff2d55;border-radius:8px;padding:2px 7px;">🔞 18+ Verified</span> ';
+  document.getElementById("pg-badges").innerHTML = badges;
+
+  var fol = await sb.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", page.id);
+  var fing = await sb.from("follows").select("follower_id", { count: "exact", head: true }).eq("follower_id", page.id);
+  document.getElementById("pg-followers").textContent = fol.count || 0;
+  document.getElementById("pg-following").textContent = fing.count || 0;
+
+  var isMine = me && me.id === page.id;
+  if (isMine) {
+    var dBtn = document.getElementById("pg-design");
+    dBtn.classList.remove("hidden");
+    dBtn.addEventListener("click", function () { location.href = "profile.html"; });
+  } else if (me) {
+    var fBtn = document.getElementById("pg-follow");
+    fBtn.classList.remove("hidden");
+    var following = false;
+    var chk = await sb.from("follows").select("follower_id").eq("follower_id", me.id).eq("following_id", page.id).maybeSingle();
+    following = !!chk.data;
+    function drawFollow() { fBtn.textContent = following ? "✓ Following" : "+ Follow"; }
+    drawFollow();
+    fBtn.addEventListener("click", async function () {
+      if (following) {
+        await sb.from("follows").delete().eq("follower_id", me.id).eq("following_id", page.id);
+        following = false;
+      } else {
+        await sb.from("follows").insert({ follower_id: me.id, following_id: page.id });
+        following = true;
+      }
+      drawFollow();
+      var c = await sb.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", page.id);
+      document.getElementById("pg-followers").textContent = c.count || 0;
+    });
+  }
+  document.getElementById("pg-share").addEventListener("click", function () {
+    var url = location.origin + location.pathname + "?u=" + encodeURIComponent(page.username);
+    if (navigator.share) navigator.share({ title: document.title, url: url }).catch(function () {});
+    else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { alert("Page link copied 🔗"); });
+    else alert(url);
+  });
+
+  // --- LIVE now? ---
+  var live = await sb.from("live_streams").select("id,title").eq("host_id", page.id).eq("status", "live").order("started_at", { ascending: false }).limit(1);
+  if (live.data && live.data.length) {
+    var lb = document.getElementById("pg-live");
+    lb.href = "watch.html?stream=" + live.data[0].id;
+    lb.textContent = "🔴 LIVE NOW: " + (live.data[0].title || "Untitled LIVE") + " — tap to watch + join the live chat";
+    lb.classList.remove("hidden");
+  }
+
+  // --- music (images bucket, <uid>/music/) ---
+  var mres = await sb.storage.from("images").list(page.id + "/music", { limit: 50, sortBy: { column: "created_at", order: "desc" } });
+  var tracks = (mres.data || []).filter(function (f) { return !!f.id; });
+  if (tracks.length) {
+    document.getElementById("pg-music-sec").classList.remove("hidden");
+    var audio = document.getElementById("pg-audio");
+    var tbox = document.getElementById("pg-tracks");
+    tracks.forEach(function (f, i) {
+      var url = sb.storage.from("images").getPublicUrl(page.id + "/music/" + f.name).data.publicUrl;
+      var title = f.name.replace(/^\d+-/, "").replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ");
+      var row = document.createElement("div");
+      row.className = "trk";
+      row.innerHTML = '<span>🎵</span><span class="t">' + esc(title || ("Track " + (i + 1))) + '</span><span>▶</span>';
+      row.addEventListener("click", function () {
+        Array.prototype.forEach.call(tbox.children, function (c) { c.classList.remove("on"); });
+        row.classList.add("on");
+        audio.src = url;
+        audio.play().catch(function () {});
+      });
+      tbox.appendChild(row);
+    });
+  }
+
+  // --- videos ---
+  var vids = await sb.from("videos").select("id,video_url,like_count").eq("user_id", page.id).eq("status", "active").order("created_at", { ascending: false }).limit(18);
+  if (vids.data && vids.data.length) {
+    document.getElementById("pg-vempty").classList.add("hidden");
+    var grid = document.getElementById("pg-vgrid");
+    vids.data.forEach(function (v) {
+      var c = document.createElement("a");
+      c.className = "cell"; c.href = "index.html?v=" + v.id;
+      c.innerHTML = '<video src="' + esc(v.video_url) + '" preload="metadata" muted playsinline></video>';
+      grid.appendChild(c);
+    });
+    document.getElementById("pg-likes").textContent = vids.data.reduce(function (a, v) { return a + (v.like_count || 0); }, 0);
+  }
+
+  // --- friends + top friends ---
+  var fr = await sb.from("follows").select("following_id").eq("follower_id", page.id).limit(60);
+  var fids = (fr.data || []).map(function (r) { return r.following_id; });
+  if (fids.length) {
+    var fp = await sb.from("profiles").select("id,username,display_name,avatar_url").in("id", fids);
+    var fmap = {};
+    (fp.data || []).forEach(function (p) { fmap[p.id] = p; });
+    function friendCell(p) {
+      var a = document.createElement("a");
+      a.className = "fr"; a.href = "page.html?u=" + encodeURIComponent(p.username);
+      a.innerHTML = '<div class="avatar">' + (p.avatar_url ? '<img src="' + esc(p.avatar_url) + '" alt="">' : esc((p.username || "?").charAt(0).toUpperCase())) + '</div><span>@' + esc(p.username) + "</span>";
+      return a;
+    }
+    var topIds = (theme.top || []).filter(function (id) { return fmap[id]; }).slice(0, 8);
+    if (topIds.length) {
+      document.getElementById("pg-top-sec").classList.remove("hidden");
+      var tgrid = document.getElementById("pg-top");
+      topIds.forEach(function (id) { tgrid.appendChild(friendCell(fmap[id])); });
+    }
+    var fgrid = document.getElementById("pg-friends");
+    var shown = 0;
+    fids.forEach(function (id) { if (fmap[id] && shown < 24) { fgrid.appendChild(friendCell(fmap[id])); shown++; } });
+    if (shown) document.getElementById("pg-fempty").classList.add("hidden");
+  }
+
+  // --- the wall ---
+  var wallBox = document.getElementById("pg-wall");
+  var wEmpty = document.getElementById("pg-wempty");
+  if (me) {
+    document.getElementById("pg-wall-form").classList.remove("hidden");
+    document.getElementById("pg-wall-signin").classList.add("hidden");
+  }
+  async function loadWall() {
+    var res = await sb.from("page_comments").select("*").eq("page_user_id", page.id).order("created_at", { ascending: false }).limit(50);
+    wallBox.innerHTML = "";
+    var rows = res.data || [];
+    wEmpty.classList.toggle("hidden", rows.length > 0);
+    if (!rows.length) return;
+    var aids = [];
+    rows.forEach(function (r) { if (aids.indexOf(r.author_id) < 0) aids.push(r.author_id); });
+    var ap = await sb.from("profiles").select("id,username,avatar_url").in("id", aids);
+    var amap = {};
+    (ap.data || []).forEach(function (p) { amap[p.id] = p; });
+    rows.forEach(function (r) {
+      var a = amap[r.author_id] || {};
+      var row = document.createElement("div");
+      row.className = "wall-row";
+      var canDel = me && (me.id === r.author_id || me.id === page.id);
+      row.innerHTML =
+        '<div class="vx-c-avatar">' + (a.avatar_url ? '<img src="' + esc(a.avatar_url) + '" alt="">' : esc((a.username || "?").charAt(0).toUpperCase())) + "</div>" +
+        '<div><div class="vx-c-meta"><a href="page.html?u=' + encodeURIComponent(a.username || "") + '" style="color:inherit;">@' + esc(a.username || "user") + "</a> <span>" + new Date(r.created_at).toLocaleDateString() + "</span></div>" +
+        '<div class="vx-c-body">' + esc(r.body) + "</div></div>" +
+        (canDel ? '<button class="wall-del" type="button" title="Delete">✕</button>' : "");
+      if (canDel) row.querySelector(".wall-del").addEventListener("click", async function () {
+        await sb.from("page_comments").delete().eq("id", r.id);
+        loadWall();
+      });
+      wallBox.appendChild(row);
+    });
+  }
+  loadWall();
+  var wPost = document.getElementById("pg-wall-post");
+  if (wPost) wPost.addEventListener("click", async function () {
+    var inp = document.getElementById("pg-wall-input");
+    var err = document.getElementById("pg-wall-err");
+    err.textContent = "";
+    var body = inp.value.trim();
+    if (!body) return;
+    var ins = await sb.from("page_comments").insert({ page_user_id: page.id, author_id: me.id, body: body });
+    if (ins.error) { err.textContent = "Could not post — try again."; return; }
+    inp.value = "";
+    loadWall();
+  });
+})();
+</script>
+<script src="js/fx.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>

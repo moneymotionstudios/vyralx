@@ -305,7 +305,7 @@
         '<button class="sound-btn"><span class="bubble">' + (SOUND_ON ? "🔊" : "🔇") + '</span><span>Sound</span></button>' +
       "</div>" +
       '<div class="meta">' +
-        '<div class="user">@' + esc(v.username) + (v.verified ? ' <span class="verified">✔</span>' : "") + "</div>" +
+        '<div class="user"><a href="page.html?u=' + encodeURIComponent(v.username) + '" style="color:inherit;text-decoration:none;">@' + esc(v.username) + '</a>' + (v.verified ? ' <span class="verified">✔</span>' : "") + "</div>" +
         '<div class="caption">' + esc(v.caption) + ' <span class="tags">' + esc((v.tags || []).join(" ")) + "</span></div>" +
         '<a class="sound-line" href="sound.html?sid=' + encodeURIComponent(v.sound_id || ("orig:" + (v.uuid || v.id || ""))) + "&name=" + encodeURIComponent(v.sound_name || ("Original sound · @" + v.username)) + '">🎵 ' + esc(v.sound_name || ("Original sound · @" + v.username)) + "</a>" +
       "</div>";

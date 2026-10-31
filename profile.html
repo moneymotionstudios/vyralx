@@ -45,7 +45,26 @@
         <p class="muted" style="margin:6px 0 0;font-size:13px;">Any image type works — it's converted automatically. Your picture shows next to your name, posts and comments so people know it's you.</p>
       </div>
       <div style="margin:12px 0;">
-        <label style="display:block;margin-bottom:6px;">🎨 Or create your avatar</label>
+        <label style="display:block;margin-bottom:6px;">🤖 Create your AI avatar — your own custom avatar</label>
+        <p class="muted" style="margin:0 0 8px;font-size:13px;">Describe the avatar you want, pick a style — or build it from one of your photos. AI makes it, you set it as your profile picture. Counts toward your daily AI generations.</p>
+        <input id="ai-prompt" type="text" maxlength="300" placeholder="e.g. Brooklyn producer, gold chain, studio lights, smiling" style="width:100%;margin-bottom:8px;">
+        <div id="ai-styles" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-green" id="ai-gen" type="button">✨ Generate my AI avatar</button>
+          <label class="btn" for="ai-file" style="cursor:pointer;">🖼️ Build it from my photo</label>
+          <input id="ai-file" type="file" accept="image/*" class="hidden">
+        </div>
+        <div id="ai-result" class="hidden" style="margin-top:10px;">
+          <img id="ai-img" alt="Your AI avatar" style="width:160px;height:160px;object-fit:cover;border-radius:14px;display:block;margin-bottom:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-green" id="ai-use" type="button">✓ Use as my profile picture</button>
+            <button class="btn" id="ai-again" type="button">↻ Generate another</button>
+          </div>
+        </div>
+        <p class="form-error" id="ai-msg"></p>
+      </div>
+      <div style="margin:12px 0;">
+        <label style="display:block;margin-bottom:6px;">🎨 Or a quick emoji avatar</label>
         <div id="av-emojis" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
         <div id="av-grads" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
         <div style="display:flex;gap:10px;align-items:center;">
@@ -58,6 +77,43 @@
       <p class="form-error" id="e-error"></p>
     </div>
     <button class="btn btn-block" id="sign-out" type="button">Sign out</button>
+  </div>
+
+  <div class="card hidden" id="page-studio" style="margin-top:14px;">
+    <h3 style="margin-top:0;">🎨 My Page Studio</h3>
+    <p class="muted" style="margin:0 0 10px;font-size:13px;">Your VIRALX page is your own website — design it, put your music on it, pick your Top Friends. Everybody can visit it.</p>
+    <a class="btn btn-green" id="pg-view" href="#" target="_blank" rel="noopener">🌐 View my page</a>
+    <span class="muted" style="font-size:12px;" id="pg-link"></span>
+    <div style="margin:12px 0;">
+      <label style="display:block;margin-bottom:6px;">Page theme</label>
+      <div id="pg-grads" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;margin-bottom:6px;">Accent color</label>
+      <div id="pg-accents" style="display:flex;gap:8px;"></div>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;margin-bottom:6px;">Custom background picture</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <label class="btn" for="pg-bgfile" style="cursor:pointer;">🖼️ Upload background</label>
+        <input id="pg-bgfile" type="file" accept="image/*" class="hidden">
+        <button class="btn" id="pg-bgclear" type="button">Remove</button>
+      </div>
+      <p class="muted" id="pg-bgstat" style="margin:6px 0 0;font-size:12px;"></p>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;margin-bottom:6px;">🎵 My music (plays on my page)</label>
+      <label class="btn" for="pg-musicfile" style="cursor:pointer;">⬆ Upload music</label>
+      <input id="pg-musicfile" type="file" accept="audio/*" multiple class="hidden">
+      <div id="pg-musiclist" style="margin-top:8px;"></div>
+      <p class="muted" style="margin:6px 0 0;font-size:12px;">MP3, M4A or WAV — up to 50 MB per track.</p>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;margin-bottom:6px;">⭐ Top Friends (pick up to 8)</label>
+      <div id="pg-topfriends"></div>
+    </div>
+    <p class="form-error" id="pg-msg"></p>
+    <button class="btn btn-green btn-block" id="pg-save" type="button">Save my page</button>
   </div>
 
   <div class="card" style="margin-top:14px;">
@@ -319,6 +375,270 @@
     gFile.value = "";
     loadGallery();
   });
+
+  // ===== AI avatar creator (vx-generate model "avatarpic") =====
+  var aiCfg = (window.VX && window.VX.cfg) || window.VX_CONFIG || {};
+  var aiStyle = "Portrait";
+  var AI_STYLES = {
+    "Portrait": "professional portrait photo, head and shoulders, studio lighting, ultra detailed",
+    "Anime": "anime style avatar, vibrant colors, clean line art",
+    "Superhero": "superhero comic style avatar, bold colors, dramatic lighting",
+    "Cyberpunk": "cyberpunk style avatar, neon lights, futuristic",
+    "Cartoon": "3d cartoon avatar, pixar style, cheerful",
+    "Royal": "royal portrait, gold crown, regal, dramatic",
+    "Street": "street style portrait, urban Brooklyn backdrop, confident",
+    "Angel": "angelic portrait, soft glow, wings, serene"
+  };
+  var aiMsgEl = document.getElementById("ai-msg");
+  function aiMsg(t, ok) { if (!aiMsgEl) return; aiMsgEl.textContent = t; aiMsgEl.style.color = ok ? "#8BFF00" : ""; }
+  var aiStylesBox = document.getElementById("ai-styles");
+  if (aiStylesBox) Object.keys(AI_STYLES).forEach(function (name) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn"; b.textContent = name; b.style.padding = "6px 10px";
+    if (name === aiStyle) b.style.borderColor = "#8BFF00";
+    b.addEventListener("click", function () {
+      aiStyle = name;
+      Array.prototype.forEach.call(aiStylesBox.children, function (c) { c.style.borderColor = ""; });
+      b.style.borderColor = "#8BFF00";
+    });
+    aiStylesBox.appendChild(b);
+  });
+  async function fnCall(name, bodyObj) {
+    var sess = (await sb.auth.getSession()).data.session;
+    var res = await fetch(aiCfg.SUPABASE_URL + "/functions/v1/" + name, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + (sess ? sess.access_token : ""),
+        "apikey": aiCfg.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify(bodyObj)
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+    return data;
+  }
+  var aiResultUrl = null, aiLastPrompt = "", aiLastImage = null;
+  async function runAiAvatar(promptText, imageUrl) {
+    aiMsg("🤖 AI is creating your avatar… this can take up to a minute.", true);
+    document.getElementById("ai-result").classList.add("hidden");
+    var out = await fnCall("vx-generate", { model: "avatarpic", prompt: promptText, image_url: imageUrl || undefined });
+    var gen = out.generation;
+    if (!gen || !gen.id) throw new Error("The studio didn't take that one — try again.");
+    var deadline = Date.now() + 150000;
+    while (Date.now() < deadline) {
+      await new Promise(function (r) { setTimeout(r, 4000); });
+      var st = await fnCall("vx-status", { generation_id: gen.id });
+      var g = st.generation || {};
+      if (g.status === "done" && g.video_url) {
+        aiResultUrl = g.video_url;
+        aiLastPrompt = promptText; aiLastImage = imageUrl || null;
+        document.getElementById("ai-img").src = aiResultUrl;
+        document.getElementById("ai-result").classList.remove("hidden");
+        aiMsg("✓ Your AI avatar is ready — use it as your profile picture, or generate another.", true);
+        return;
+      }
+      if (g.status === "error") throw new Error(g.error || "That generation failed — try a different description.");
+    }
+    throw new Error("That one is taking too long — try again in a moment.");
+  }
+  var aiGenBtn = document.getElementById("ai-gen");
+  if (aiGenBtn) aiGenBtn.addEventListener("click", async function () {
+    var text = document.getElementById("ai-prompt").value.trim();
+    if (!text) { aiMsg("Describe your avatar first — who is it, what do they look like, where are they?", false); return; }
+    aiGenBtn.disabled = true;
+    try { await runAiAvatar(text + ", " + AI_STYLES[aiStyle] + ", avatar profile picture, centered face, square", null); }
+    catch (e) { aiMsg(e.message || String(e), false); }
+    aiGenBtn.disabled = false;
+  });
+  var aiFile = document.getElementById("ai-file");
+  if (aiFile) aiFile.addEventListener("change", async function () {
+    if (!aiFile.files || !aiFile.files[0]) return;
+    try {
+      aiMsg("Uploading your photo…", true);
+      var blob = await fileToJpeg(aiFile.files[0], 1024);
+      var path = u.id + "/ai-src-" + Date.now() + ".jpg";
+      var up = await sb.storage.from("images").upload(path, blob || aiFile.files[0], { contentType: "image/jpeg", upsert: false });
+      if (up.error) throw up.error;
+      var srcUrl = sb.storage.from("images").getPublicUrl(path).data.publicUrl;
+      await runAiAvatar(AI_STYLES[aiStyle] + ", stylized avatar portrait of the person in the photo, keep their face recognizable, head and shoulders, clean background", srcUrl);
+    } catch (e) { aiMsg(e.message || String(e), false); }
+    aiFile.value = "";
+  });
+  var aiAgain = document.getElementById("ai-again");
+  if (aiAgain) aiAgain.addEventListener("click", async function () {
+    if (!aiLastPrompt) return;
+    aiAgain.disabled = true;
+    try { await runAiAvatar(aiLastPrompt, aiLastImage); }
+    catch (e) { aiMsg(e.message || String(e), false); }
+    aiAgain.disabled = false;
+  });
+  var aiUse = document.getElementById("ai-use");
+  if (aiUse) aiUse.addEventListener("click", async function () {
+    if (!aiResultUrl) return;
+    aiMsg("Setting your profile picture…", true);
+    try {
+      var r = await fetch(aiResultUrl);
+      if (!r.ok) throw new Error("fetch failed");
+      var blob = await r.blob();
+      await saveAvatarBlob(blob, "jpg");
+      aiMsg("✓ Done — your AI avatar is now your profile picture, everywhere on VIRALX.", true);
+    } catch (e) {
+      // Fallback: point the profile straight at the AI image.
+      var upd = await sb.from("profiles").update({ avatar_url: aiResultUrl }).eq("id", u.id);
+      if (upd.error) { aiMsg("Could not set it — try again.", false); return; }
+      if (pr.data) pr.data.avatar_url = aiResultUrl;
+      setHeaderAvatar(aiResultUrl);
+      aiMsg("✓ Done — your AI avatar is now your profile picture, everywhere on VIRALX.", true);
+    }
+  });
+
+  // ===== My Page Studio (MySpace-style pages) =====
+  var studio = document.getElementById("page-studio");
+  if (studio && pr.data) {
+    studio.classList.remove("hidden");
+    var pgTheme = (pr.data.page_theme && typeof pr.data.page_theme === "object") ? pr.data.page_theme : {};
+    if (!Array.isArray(pgTheme.top)) pgTheme.top = [];
+    var pgMsgEl = document.getElementById("pg-msg");
+    function pgMsg(t, ok) { pgMsgEl.textContent = t; pgMsgEl.style.color = ok ? "#8BFF00" : ""; }
+    var pgUrl = location.origin + location.pathname.replace(/profile\.html$/, "") + "page.html?u=" + encodeURIComponent(pr.data.username);
+    var pgView = document.getElementById("pg-view");
+    pgView.href = pgUrl;
+    document.getElementById("pg-link").textContent = " " + pgUrl.replace(/^https?:\/\//, "");
+
+    var PG_GRADS = [
+      ["Midnight", ["#090B0A", "#090B0A"]],
+      ["Toxic Night", ["#0a1f05", "#090B0A"]],
+      ["Royal Purple", ["#2b0a4a", "#090B0A"]],
+      ["Blood Red", ["#4a0a12", "#090B0A"]],
+      ["Ocean Deep", ["#06283d", "#090B0A"]],
+      ["Gold Rush", ["#4a360a", "#090B0A"]],
+      ["Rose", ["#4a0a2e", "#090B0A"]]
+    ];
+    var gradBox = document.getElementById("pg-grads");
+    PG_GRADS.forEach(function (g) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "btn"; b.textContent = g[0];
+      b.style.background = "linear-gradient(135deg," + g[1][0] + "," + g[1][1] + ")";
+      var cur = JSON.stringify(pgTheme.grad || null) === JSON.stringify(g[1]);
+      if (cur) b.style.borderColor = "#8BFF00";
+      b.addEventListener("click", function () {
+        pgTheme.grad = g[1]; delete pgTheme.bgImage;
+        document.getElementById("pg-bgstat").textContent = "";
+        Array.prototype.forEach.call(gradBox.children, function (c) { c.style.borderColor = ""; });
+        b.style.borderColor = "#8BFF00";
+      });
+      gradBox.appendChild(b);
+    });
+    var PG_ACCENTS = ["#8BFF00", "#00E5FF", "#FF2D92", "#FFB300", "#B388FF", "#FF5252"];
+    var accBox = document.getElementById("pg-accents");
+    PG_ACCENTS.forEach(function (c) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = "●"; b.title = c;
+      b.style.cssText = "width:34px;height:34px;border-radius:50%;border:2px solid " + (pgTheme.accent === c ? "#fff" : "transparent") + ";background:" + c + ";color:#fff;font-size:16px;cursor:pointer;";
+      b.addEventListener("click", function () {
+        pgTheme.accent = c;
+        Array.prototype.forEach.call(accBox.children, function (x) { x.style.borderColor = "transparent"; });
+        b.style.borderColor = "#fff";
+      });
+      accBox.appendChild(b);
+    });
+    if (pgTheme.bgImage) document.getElementById("pg-bgstat").textContent = "Custom background is set ✓";
+    var bgFile = document.getElementById("pg-bgfile");
+    bgFile.addEventListener("change", async function () {
+      if (!bgFile.files || !bgFile.files[0]) return;
+      try {
+        document.getElementById("pg-bgstat").textContent = "Uploading background…";
+        var blob = await fileToJpeg(bgFile.files[0], 1600);
+        var path = u.id + "/pagebg-" + Date.now() + ".jpg";
+        var up = await sb.storage.from("images").upload(path, blob || bgFile.files[0], { contentType: "image/jpeg", upsert: false });
+        if (up.error) throw up.error;
+        pgTheme.bgImage = sb.storage.from("images").getPublicUrl(path).data.publicUrl;
+        document.getElementById("pg-bgstat").textContent = "Custom background ready — hit Save my page ✓";
+      } catch (e) { document.getElementById("pg-bgstat").textContent = "Upload failed — try another picture."; }
+      bgFile.value = "";
+    });
+    document.getElementById("pg-bgclear").addEventListener("click", function () {
+      delete pgTheme.bgImage;
+      document.getElementById("pg-bgstat").textContent = "Background removed — hit Save my page.";
+    });
+
+    // --- music manager ---
+    var musicBox = document.getElementById("pg-musiclist");
+    async function loadPgMusic() {
+      musicBox.innerHTML = "";
+      var res = await sb.storage.from("images").list(u.id + "/music", { limit: 50, sortBy: { column: "created_at", order: "desc" } });
+      var files = (res.data || []).filter(function (f) { return !!f.id; });
+      if (!files.length) { musicBox.innerHTML = '<p class="muted" style="font-size:13px;">No music yet — upload your first track.</p>'; return; }
+      files.forEach(function (f) {
+        var title = f.name.replace(/^\d+-/, "").replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ");
+        var row = document.createElement("div");
+        row.style.cssText = "display:flex;gap:8px;align-items:center;padding:7px;border:1px solid rgba(255,255,255,.09);border-radius:10px;margin-bottom:6px;";
+        row.innerHTML = '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🎵 ' + title.replace(/</g, "&lt;") + "</span>";
+        var del = document.createElement("button");
+        del.className = "btn"; del.type = "button"; del.textContent = "🗑";
+        del.addEventListener("click", async function () {
+          await sb.storage.from("images").remove([u.id + "/music/" + f.name]);
+          loadPgMusic();
+        });
+        row.appendChild(del);
+        musicBox.appendChild(row);
+      });
+    }
+    loadPgMusic();
+    var mf = document.getElementById("pg-musicfile");
+    mf.addEventListener("change", async function () {
+      if (!mf.files || !mf.files.length) return;
+      pgMsg("Uploading music…", true);
+      var failed = 0;
+      for (var i = 0; i < mf.files.length; i++) {
+        var file = mf.files[i];
+        var clean = file.name.replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9\- ]/gi, "").trim().slice(0, 60) || "track";
+        var ext = (file.name.split(".").pop() || "mp3").toLowerCase().replace(/[^a-z0-9]/g, "");
+        var path = u.id + "/music/" + Date.now() + "-" + clean.replace(/\s+/g, "-") + "." + ext;
+        var up = await sb.storage.from("images").upload(path, file, { contentType: file.type || "audio/mpeg", upsert: false });
+        if (up.error) failed++;
+      }
+      pgMsg(failed ? "Some tracks failed (50 MB max each) — the rest are up." : "✓ Music added — it's live on your page.", !failed);
+      mf.value = "";
+      loadPgMusic();
+    });
+
+    // --- top friends picker ---
+    var tfBox = document.getElementById("pg-topfriends");
+    (async function () {
+      var fr = await sb.from("follows").select("following_id").eq("follower_id", u.id).limit(60);
+      var ids = (fr.data || []).map(function (r) { return r.following_id; });
+      if (!ids.length) { tfBox.innerHTML = '<p class="muted" style="font-size:13px;">Follow creators first — then pick your Top 8.</p>'; return; }
+      var fp = await sb.from("profiles").select("id,username").in("id", ids);
+      (fp.data || []).forEach(function (p) {
+        var lab = document.createElement("label");
+        lab.style.cssText = "display:inline-flex;gap:6px;align-items:center;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 10px;margin:0 6px 6px 0;cursor:pointer;font-size:13px;";
+        var cb = document.createElement("input");
+        cb.type = "checkbox"; cb.value = p.id;
+        cb.checked = pgTheme.top.indexOf(p.id) >= 0;
+        cb.addEventListener("change", function () {
+          if (cb.checked) {
+            if (pgTheme.top.length >= 8) { cb.checked = false; pgMsg("Top Friends is 8 max.", false); return; }
+            pgTheme.top.push(p.id);
+          } else {
+            pgTheme.top = pgTheme.top.filter(function (x) { return x !== p.id; });
+          }
+        });
+        lab.appendChild(cb);
+        lab.appendChild(document.createTextNode("@" + p.username));
+        tfBox.appendChild(lab);
+      });
+    })();
+
+    document.getElementById("pg-save").addEventListener("click", async function () {
+      pgMsg("Saving…", true);
+      var upd = await sb.from("profiles").update({ page_theme: pgTheme }).eq("id", u.id);
+      if (upd.error) { pgMsg("Could not save — " + upd.error.message, false); return; }
+      if (pr.data) pr.data.page_theme = pgTheme;
+      pgMsg("✓ Your page is saved — tap View my page to see it live.", true);
+    });
+  }
 })();
 </script>
 <script src="js/fx.js"></script>
